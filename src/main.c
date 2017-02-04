@@ -40,10 +40,10 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
             col.b = 0;
 
             Rect rect;
-            rect.x = 1280 - 380;
+            rect.x = screen.w - 380;
             rect.y = 0;
             rect.w = 380;
-            rect.h = 720;
+            rect.h = screen.h;
 
             FillRectangle( &screen, &rect, col );
             UpdateWindowImage( device_context, &screen, NULL, NULL );
