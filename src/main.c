@@ -40,10 +40,10 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
             col.b = 0;
 
             Rect rect;
-            rect.x = 20;
-            rect.y = 60;
-            rect.w = 20;
-            rect.h = 10;
+            rect.x = 1280 - 380;
+            rect.y = 0;
+            rect.w = 380;
+            rect.h = 720;
 
             FillRectangle( &screen, &rect, col );
             UpdateWindowImage( device_context, &screen, NULL, NULL );
@@ -104,12 +104,12 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     // We need to register the window class in order to use it.
     if ( RegisterClass( &window_class ))
     {
-        CreateImage( &screen, 720, 720 );
+        CreateImage( &screen, 1280, 720 );
 
         // Having registered the class, we can now create a window with it.
         HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
-                                                                720, 720, NULL, NULL, instance, NULL );
+                                                                1280, 720, NULL, NULL, instance, NULL );
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
