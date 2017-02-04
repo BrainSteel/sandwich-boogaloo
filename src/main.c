@@ -34,6 +34,18 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
         {
             HDC device_context = GetDC( win_handle );
             ClearBitmap( &screen, BLACK );
+            RGB col;
+            col.r = 255;
+            col.g = 0;
+            col.b = 0;
+
+            Rect rect;
+            rect.x = 20;
+            rect.y = 60;
+            rect.w = 20;
+            rect.h = 10;
+
+            FillRectangle( &screen, &rect, col );
             UpdateWindowImage( device_context, &screen, NULL, NULL );
             ReleaseDC( win_handle, device_context );
         }

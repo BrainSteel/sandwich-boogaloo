@@ -15,6 +15,41 @@ int CreateImage( Bitmap* img, uint32_t w, uint32_t h )
     return ResizeImage( img, w, h );
 }
 
+void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
+{
+    if ( !img )
+    {
+        return;
+    }
+
+    Rect dst_local;
+    if ( dst )
+    {
+        dst_local = *dst;
+    }
+    else
+    {
+        dst_local.x = 0;
+        dst_local.y = 0;
+        dst_local.w = img->w;
+        dst_local.h = img->h;
+    }
+
+    int x, y;
+    void* pixel_row = img->pixels + dst_local.x + dst_local.y * img->w;
+    for ( y = 0; y < dst_local.h; y++ )
+    {
+        void* pixel = pixel_row;
+        for ( x = 0; x < dst_local.w; x++ )
+        {
+            WriteRGB( pixel, col.r, col.g, col.b );
+            pixel += sizeof( uint32_t );
+        }
+
+        pixel_row += img->w * sizeof( uint32_t );
+    }
+}
+
 int ResizeImage( Bitmap* img, uint32_t w, uint32_t h )
 {
     if ( img->pixels )
