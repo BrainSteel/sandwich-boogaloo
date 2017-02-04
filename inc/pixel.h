@@ -45,6 +45,7 @@ void DestroyImage( Bitmap* screen_img );
 void ClearBitmap( Bitmap* img, ClearColor col );
 void DrawHorizontalLine( Bitmap* img, int xstart, int xend, int y, RGB color );
 void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color );
+void DrawRectangle( Bitmap* img, const Rect* rect, RGB color );
 void DrawGradient( Bitmap* img, const Rect* dst, RGB startcol, RGB xcol, RGB ycol );
 void FillGradientPattern( Bitmap* img, int x_off, int y_off );
 
