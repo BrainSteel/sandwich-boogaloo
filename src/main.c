@@ -11,7 +11,8 @@ char error_buf[256];
 
 LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, LPARAM lparam )
 {
-    LRESULT res = DefWindowProc( win_handle, message, lparam, wparam );
+    // DefWindowProc is Windows' default action for whatever message is received
+    LRESULT result = DefWindowProc( win_handle, message, wparam, lparam );
 
     switch ( message )
     {
@@ -40,21 +41,20 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
         case WM_LBUTTONDOWN:
         {
-            // Handle left button down
+
         }
         break;
 
-        case WM_KEYDOWN:
+        case WM_SETCURSOR:
         {
-            // Handle keyboard presses
+            SetCursor( LoadCursor( 0, IDC_ARROW ));
         }
-        break;
 
         default:
         break;
     }
 
-    return res;
+    return result;
 }
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
@@ -72,7 +72,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     window_class.hInstance = instance;
 
     // A name for the class, which is not user-visible and is unfortunately necessary.
-    window_class.lpszClassName = "TicTacToeWindowClass";
+    window_class.lpszClassName = "SandwichWindowClass";
 
     // The icon (in the upper left-hand corner) for the windows we will make is
     // loaded as an image. MAKEINTRESOURCE( ICON ) identifies the image to load,
@@ -87,17 +87,21 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         return 1;
     }
 
+    window_class.hCursor = LoadCursor( instance, IDC_ARROW );
+
     // We need to register the window class in order to use it.
     if ( RegisterClass( &window_class ))
     {
+        CreateImage( &screen, 720, 720 );
 
         // Having registered the class, we can now create a window with it.
-        HWND win_handle = CreateWindowEx( 0, "TicTacToeWindowClass", "Tic Tac Toe", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+        HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
                                                                 720, 720, NULL, NULL, instance, NULL );
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
+
             if ( !ResizeWindowImage( win_handle, &screen ))
             {
                 sprintf( error_buf, "Uh oh" );
@@ -135,6 +139,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         else
         {
             sprintf( error_buf, "Failed to create the window: %lx", GetLastError( ));
+            MessageBoxA( 0, error_buf, 0, MB_OK );
             return 1;
         }
     }
