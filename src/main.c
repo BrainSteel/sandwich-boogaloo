@@ -5,8 +5,11 @@
 #include "common.h"
 #include "pixel.h"
 #include "screen.h"
+#include "gamestate.h"
+#include "pool.h"
 
 Bitmap screen;
+GameState state;
 char error_buf[256];
 
 LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, LPARAM lparam )
@@ -110,6 +113,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
                                                                 1280, 720, NULL, NULL, instance, NULL );
+
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
@@ -161,6 +165,8 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         MessageBoxA( 0, error_buf, 0, MB_OK );
         return 1;
     }
+
+    DestroyImage( &screen );
 
     return 0;
 }
