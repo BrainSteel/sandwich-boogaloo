@@ -550,6 +550,14 @@ void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color )
     }
 }
 
+void DrawRectangle( Bitmap* img, const Rect* rect, RGB color )
+{
+    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y, color );
+    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y + rect->h, color );
+    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x, color );
+    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x + rect->w, color);
+}
+
 void DrawGradient( Bitmap* img, const Rect* dst, RGB startcol, RGB xcol, RGB ycol )
 {
     Rect to;
