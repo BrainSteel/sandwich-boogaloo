@@ -42,7 +42,7 @@ static inline void WriteRGB( uint32_t* towrite, uint8_t r, uint8_t g, uint8_t b 
     // X R G B      X R G B     X R G B     X R G B ...
     //
     // Want: 1, 2
-    // WriteRGB( img->pixels + (img->w (4) * 2 + 1) * 4(bytes_per_pixel), 128, 16, 32 )
+    // Example: WriteRGB( img->pixels + (img->w (4) * 2 + 1) * 4(bytes_per_pixel), 128, 16, 32 )
     // Each pixel is a uint32_t
     // 0x00RRGGBB == 0x00RR0000 | 0x0000GG00 | 0x000000BB == (0x000000RR << 16) | (0x000000GG << 8) | 0x000000BB
     // In this case, 0x000000RR == 0x000000F0, 0x000000GG == 0x00000010, 0x000000BB == 0x00000020

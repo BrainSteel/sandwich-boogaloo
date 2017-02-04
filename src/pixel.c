@@ -25,7 +25,10 @@ void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
     Rect dst_local;
     if ( dst )
     {
-        dst_local = *dst;
+        dst_local.x = dst->x;
+        dst_local.y = dst->y;
+        dst_local.w = dst->w;
+        dst_local.h = dst->h;
     }
     else
     {
@@ -35,18 +38,21 @@ void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
         dst_local.h = img->h;
     }
 
+    dst_local.x = dst_local.x < 0 ? 0 : dst_local.x;
+    dst_local.y = dst_local.y < 0 ? 0 : dst_local.y;
+
     int x, y;
-    void* pixel_row = img->pixels + dst_local.x + dst_local.y * img->w;
-    for ( y = 0; y < dst_local.h; y++ )
+    uint32_t* pixel_row = (uint32_t*)img->pixels + dst_local.x + dst_local.y * img->w;
+    for ( y = 0; y < dst_local.h && y + dst_local.y < img->h; y++ )
     {
-        void* pixel = pixel_row;
-        for ( x = 0; x < dst_local.w; x++ )
+        uint32_t* pixel = pixel_row;
+        for ( x = 0; x < dst_local.w && x + dst_local.x < img->w; x++ )
         {
             WriteRGB( pixel, col.r, col.g, col.b );
-            pixel += sizeof( uint32_t );
+            pixel++;
         }
 
-        pixel_row += img->w * sizeof( uint32_t );
+        pixel_row += img->w;
     }
 }
 
