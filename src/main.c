@@ -8,9 +8,13 @@
 #include "screen.h"
 #include "menu.h"
 #include "string.h"
+#include "gamestate.h"
+#include "pool.h"
 
 Bitmap screen;
 Bitmap main_menu;
+GameState state;
+
 char error_buf[256];
 
 void Paint( Bitmap* target, HWND win_handle, int x, int y, char* win_type );
@@ -193,6 +197,8 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         MessageBoxA( 0, error_buf, 0, MB_OK );
         return 1;
     }
+
+    DestroyImage( &screen );
 
     return 0;
 }
