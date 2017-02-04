@@ -1,5 +1,6 @@
 
-#include "global.h"
+#include "pixel.h"
+#include "common.h"
 
 int CreateImage( Bitmap* img, uint32_t w, uint32_t h )
 {

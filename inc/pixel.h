@@ -5,13 +5,6 @@
 #include "stdint.h"
 #include "stdio.h"
 
-#define ICON 101
-
-#define SCREEN_WIDTH 700
-#define SCREEN_HEIGHT 600
-#define BYTES_PER_PIXEL 4
-#define BITS_PER_PIXEL (BYTES_PER_PIXEL * 8)
-
 typedef struct Bitmap
 {
     BITMAPINFO info;
@@ -24,12 +17,6 @@ typedef struct Rect
     int x, y;
     int w, h;
 } Rect;
-
-typedef struct GameState
-{
-    uint8_t board[9];
-    uint8_t player_turn;
-} GameState;
 
 typedef struct RGB
 {
