@@ -15,6 +15,19 @@ int CreateImage( Bitmap* img, uint32_t w, uint32_t h )
     return ResizeImage( img, w, h );
 }
 
+int IsWithin( const Rect* rect)//, Cursor ms )
+{
+    /*if( ms.X > rect->x && ms.X < rect->x + rect->w )
+    {
+        if( ms.Y > rect->y && ms.Y < rect->y + rect->h )
+        {
+            return 1;
+        }
+    }*/
+
+    return 0;
+}
+
 void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
 {
     if ( !img )
@@ -552,10 +565,10 @@ void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color )
 
 void DrawRectangle( Bitmap* img, const Rect* rect, RGB color )
 {
-    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y, color );
-    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y + rect->h, color );
-    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x, color );
-    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x + rect->w, color);
+    DrawHorizontalLine( img, rect->x - 1, rect->x + rect->w - 1, rect->y - 1, color );
+    DrawHorizontalLine( img, rect->x - 1, rect->x + rect->w - 1, rect->y - 1 + rect->h - 1, color );
+    DrawVerticalLine( img, rect->y - 1, rect->y + rect->h - 1, rect->x - 1, color );
+    DrawVerticalLine( img, rect->y - 1, rect->y + rect->h - 1, rect->x - 1 + rect->w - 1, color);
 }
 
 void DrawGradient( Bitmap* img, const Rect* dst, RGB startcol, RGB xcol, RGB ycol )

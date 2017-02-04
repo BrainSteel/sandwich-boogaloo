@@ -25,7 +25,7 @@ COPIED_RESOURCES = $(RESOURCES:%=$(BIN)\\%)
 CFLAGS = -Wall -g -O0
 
 # Targets the Windows subsystem--suppresses the console window on startup
-LFLAGS = -lgdi32 -Wl,-subsystem,windows
+LFLAGS = -lgdi32 #-Wl,-subsystem,windows
 
 # The main application target
 $(BIN)\$(PROGRAM): $(COPIED_RESOURCES) $(RESOURCE_OBJECTS) $(OBJECTS) $(BIN)

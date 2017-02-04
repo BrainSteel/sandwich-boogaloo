@@ -1,18 +1,27 @@
 #include "stdio.h"
 
 #include "windows.h"
+#include "windowsx.h"
 
 #include "common.h"
 #include "pixel.h"
 #include "screen.h"
+#include "menu.h"
+#include "string.h"
 
 Bitmap screen;
+Bitmap main_menu;
 char error_buf[256];
+
+void Paint( Bitmap* target, HWND win_handle, int x, int y, char* win_type );
 
 LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, LPARAM lparam )
 {
     // DefWindowProc is Windows' default action for whatever message is received
     LRESULT result = DefWindowProc( win_handle, message, wparam, lparam );
+
+    int x = 0;
+    int y = 0;
 
     switch ( message )
     {
@@ -28,26 +37,19 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
             ResizeWindowImage( win_handle, &screen );
         break;
 
+        case WM_MOUSEMOVE:
+        {
+            x = GET_X_LPARAM( lparam );
+            y = GET_Y_LPARAM( lparam );
+            UpdatemainMenu( x, y );
+        }
+        break;
+
         // The WM_PAINT message indicates we should draw
         // to the screen.
         case WM_PAINT:
         {
-            HDC device_context = GetDC( win_handle );
-            ClearBitmap( &screen, BLACK );
-            RGB col;
-            col.r = 255;
-            col.g = 0;
-            col.b = 0;
-
-            Rect rect;
-            rect.x = 1280 - 380;
-            rect.y = 0;
-            rect.w = 380;
-            rect.h = 720;
-
-            FillRectangle( &screen, &rect, col );
-            UpdateWindowImage( device_context, &screen, NULL, NULL );
-            ReleaseDC( win_handle, device_context );
+            Paint( &main_menu, win_handle, x, y, "MainMenu" );
         }
         break;
 
@@ -67,6 +69,34 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
     }
 
     return result;
+}
+
+void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, char* win_type )
+{
+    HDC device_context = GetDC( win_handle );
+    ClearBitmap( target, BLACK );
+    RGB col;
+    col.r = 255;
+    col.g = 0;
+    col.b = 0;
+
+    Rect rect;
+    rect.x = 1280 - 380;
+    rect.y = 0;
+    rect.w = 380;
+    rect.h = 720;
+
+    if( !strcmp( win_type, "MainMenu" ) )
+    {
+        DisplayMainMenu( &main_menu, mouse_x, mouse_y );
+    }
+    else if( !strcmp( win_type, "GameScreen" ) )
+    {
+        FillRectangle( target, &rect, col );
+    }
+
+    UpdateWindowImage( device_context, target, NULL, NULL );
+    ReleaseDC( win_handle, device_context );
 }
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
@@ -104,12 +134,14 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     // We need to register the window class in order to use it.
     if ( RegisterClass( &window_class ))
     {
-        CreateImage( &screen, 1280, 720 );
+        CreateImage( &screen, SCREEN_WIDTH, SCREEN_HEIGHT );
+
+        CreateImage( &main_menu, SCREEN_WIDTH, SCREEN_HEIGHT );
 
         // Having registered the class, we can now create a window with it.
         HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
-                                                                1280, 720, NULL, NULL, instance, NULL );
+                                                                SCREEN_WIDTH, SCREEN_HEIGHT, NULL, NULL, instance, NULL );
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
