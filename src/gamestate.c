@@ -30,8 +30,60 @@ int InitializeGameState( GameState* state )
     state->logical_frames = 0;
     state->fps = 0;
 
-    state->camera_follow = NULL;
+    RGB colorkey;
+    colorkey.r = 255;
+    colorkey.g = 255;
+    colorkey.b = 255;
 
+    if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state->textures.bread, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "Spr_Crecent.bmp", &state->textures.crecent, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state->textures.lettuce, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state->textures.quadropus, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state->textures.tomato, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "T_BoneSand.bmp", &state->textures.bone_sand, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "T_SesameSand.bmp", &state->textures.sesame_sand, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    if ( !LoadImageFromFile( "T_WavySand.bmp", &state->textures.wavy_sand, &colorkey ))
+    {
+        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+        return 1;
+    }
+
+    state->camera_follow = NULL;
     state->free_entity = NULL;
 
     state->entities = state->pool->sections[state->entity_section].begin;
@@ -243,13 +295,7 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
             dstentity.w = state->grid_m * ppmw;
             dstentity.h = state->grid_m * ppmh;
 
-            RGB color;
-            color.r = 0;
-            color.g = 255;
-            color.b = 127;
-
-            FillRectangle( screen, &dstentity, color );
+            ImageBlitScaled( &state->textures.bread, screen, NULL, &dstentity, AlphaBinary );
         }
     }
-
 }

@@ -77,11 +77,19 @@ typedef struct TextureSet
 {
     Bitmap numbers;
     Bitmap beach;
-    Bitmap bread;
-    Bitmap lettuce;
+
     Bitmap quadropus;
+
+    // Pickup texture
+    Bitmap bread;
+    Bitmap crecent;
+    Bitmap lettuce;
     Bitmap tomato;
-    Bitmap cresent;
+
+    // Tile textures
+    Bitmap bone_sand;
+    Bitmap sesame_sand;
+    Bitmap wavy_sand;
 } TextureSet;
 
 typedef struct GameState

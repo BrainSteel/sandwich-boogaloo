@@ -136,7 +136,7 @@ static uint32_t SwapByteOrder32( uint32_t x )
 // repeatedly.
 #define READ_BYTESTREAM( type, ptr, off ) (*(type*)(ptr + off)); off += sizeof(type);
 
-int LoadImageFromFile( const char* filename, Bitmap* img )
+int LoadImageFromFile( const char* filename, Bitmap* img, const RGB* colorkey )
 {
     // Reference for this function:
     // http://www.fileformat.info/format/bmp/egff.htm
@@ -154,6 +154,12 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
     int returncode = 0;
     HANDLE file;
     char* pixelbuf = NULL;
+
+    uint32_t mapped_colorkey;
+    if ( colorkey )
+    {
+        WriteRGB( &mapped_colorkey, colorkey->r, colorkey->g, colorkey->b );
+    }
 
 // Bracket to prevent scope errors
 {
@@ -244,6 +250,8 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         MessageBoxA( 0, error_buf, 0, MB_OK );
         goto stop;
     }
+    int is_v4 = (bmphead.header_size > bmphead_size);
+
 
     // Read pixel formatting data
     bmphead.w = READ_BYTESTREAM( LONG, bmphead_bytes, offset );
@@ -296,9 +304,17 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
     // we read the bitmasks for r, g, and b as well.
     if ( bmphead.compression == 3 )
     {
+        uint32_t mask_size;
+        if ( is_v4 )
+        {
+            mask_size = 4 * sizeof( DWORD );
+        }
+        else
+        {
+            mask_size = 3 * sizeof( DWORD );
+        }
 
-        const uint32_t mask_size = 3 * sizeof(DWORD);
-        char mask_bytes[mask_size];
+        char mask_bytes[4];
         if ( !ReadFile( file, &mask_bytes, mask_size, &bytes_read, &ol ) ||
                         bytes_read != mask_size )
         {
@@ -322,6 +338,27 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         bmphead.bitmask.rmax = bmphead.bitmask.rmask >> bmphead.bitmask.rshift;
         bmphead.bitmask.gmax = bmphead.bitmask.gmask >> bmphead.bitmask.gshift;
         bmphead.bitmask.bmax = bmphead.bitmask.bmask >> bmphead.bitmask.bshift;
+
+        if ( is_v4 )
+        {
+            // In V4 Bitmap and above, we have an alpha channel!
+            bmphead.bitmask.amask = READ_BYTESTREAM( DWORD, mask_bytes, offset );
+            if ( BitScanReverse( &bmphead.bitmask.ashift, bmphead.bitmask.amask ))
+            {
+                bmphead.bitmask.amax = bmphead.bitmask.amask >> bmphead.bitmask.ashift;
+            }
+            else
+            {
+                bmphead.bitmask.ashift = 0;
+                bmphead.bitmask.amax = 0;
+            }
+        }
+        else
+        {
+            bmphead.bitmask.amask = 0;
+            bmphead.bitmask.ashift = 0;
+            bmphead.bitmask.amax = 0;
+        }
     }
 
     // Now, it is time to begin actually reading the bitmap data!
@@ -369,16 +406,14 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
     }
 
     ol.Offset = filehead.bit_start;
-    if ( !ReadFile( file, pixelbuf, bmp_size, &bytes_read, &ol ) ||
-                    bytes_read != bmp_size )
+    if ( !ReadFile( file, pixelbuf, bmp_size, &bytes_read, &ol ))
     {
         sprintf( error_buf, "Could not read file contents of %s: %lx", filename, GetLastError( ));
         MessageBoxA( 0, error_buf, 0, MB_OK );
         goto stop;
     }
 
-    int y;
-    int x;
+    int x, y;
     void* read_row = pixelbuf + pitch * ystart;
     void* read_pixel = read_row;
     void* write_pixel = img->pixels;
@@ -387,7 +422,7 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         read_pixel = read_row;
         for ( x = 0; x < realw; x++ )
         {
-            uint8_t r, g, b;
+            uint8_t r, g, b, a = 0;
             switch (bmphead.bits_pp)
             {
                 case 16:
@@ -409,6 +444,12 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                     r = ((uint32_t)rraw * 0xFF) / bmphead.bitmask.rmax;
                     g = ((uint32_t)graw * 0xFF) / bmphead.bitmask.gmax;
                     b = ((uint32_t)braw * 0xFF) / bmphead.bitmask.bmax;
+
+                    if ( is_v4 && bmphead.bitmask.amax )
+                    {
+                        uint16_t araw = (pval & bmphead.bitmask.amask) >> bmphead.bitmask.ashift;
+                        a = ((uint32_t)araw * 0xFF) / bmphead.bitmask.amax;
+                    }
                 }
                 break;
 
@@ -437,6 +478,12 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                     r = (rraw * 0xFF) / bmphead.bitmask.rmax;
                     g = (graw * 0xFF) / bmphead.bitmask.gmax;
                     b = (braw * 0xFF) / bmphead.bitmask.bmax;
+
+                    if ( is_v4 && bmphead.bitmask.amax )
+                    {
+                        uint32_t araw = (pval & bmphead.bitmask.amask) >> bmphead.bitmask.ashift;
+                        a = (araw * 0xFF) / bmphead.bitmask.amax;
+                    }
                 }
                 break;
 
@@ -444,7 +491,22 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                 break;
             }
 
-            WriteRGB( write_pixel, r, g, b );
+            if (is_v4)
+            {
+                WriteRGBA( write_pixel, r, g, b, a );
+                if ( colorkey && mapped_colorkey == *(uint32_t*)write_pixel )
+                {
+                    *(uint32_t*)write_pixel |= TRANSPARENT_MASK;
+                }
+            }
+            else
+            {
+                WriteRGB( write_pixel, r, g, b );
+                if ( colorkey && mapped_colorkey == *(uint32_t*)write_pixel )
+                {
+                    *(uint32_t*)write_pixel |= TRANSPARENT_MASK;
+                }
+            }
 
             write_pixel += sizeof( uint32_t );
             read_pixel += bytes_pp;
@@ -452,10 +514,10 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         read_row += ydir * pitch;
     }
 
-
     // If we made it this far, we succeeded
     returncode = 1;
 }
+
 stop:
     if ( file != INVALID_HANDLE_VALUE )
     {
@@ -681,7 +743,7 @@ void FillGradientPattern( Bitmap* img, int x_off, int y_off )
     }
 }
 
-void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty )
+void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty, AlphaSetting alpha )
 {
     Rect src_local = ResolveImageRectangle( src, srcrect );
 
@@ -696,16 +758,43 @@ void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t ds
     uint32_t* dst_start = (uint32_t*)dst->pixels + dstx + dsty * dst->w;
     const uint32_t* src_start = (uint32_t*)src->pixels + src_local.x + src_local.y * src->w;
 
-    int y;
-    for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
+    if (alpha == AlphaIgnore )
     {
-        memcpy( dst_start, src_start, scanlen * sizeof( uint32_t ));
-        dst_start += dst->w;
-        src_start += src->w;
+        int y;
+        for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
+        {
+            memcpy( dst_start, src_start, scanlen * sizeof( uint32_t ));
+            dst_start += dst->w;
+            src_start += src->w;
+        }
+    }
+    else if ( alpha == AlphaBinary )
+    {
+        int x, y;
+        uint32_t* src_row = (uint32_t*)src->pixels + src_local.y * src->w + src_local.x;
+        uint32_t* dst_row = (uint32_t*)dst->pixels + dsty * dst->w + dstx;
+        for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
+        {
+            uint32_t* src_pixel = src_row;
+            uint32_t* dst_pixel = dst_row;
+            for ( x = 0; x < src_local.w && x < dst->w - dstx; x++ )
+            {
+                if ( !(*src_pixel & TRANSPARENT_MASK) )
+                {
+                    *dst_pixel = *src_pixel;
+                }
+
+                src_pixel++;
+                dst_pixel++;
+            }
+
+            src_row += src->w;
+            dst_row += dst->w;
+        }
     }
 }
 
-void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect )
+void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect, AlphaSetting alpha )
 {
     Rect src_local = ResolveImageRectangle( src, srcrect );
     Rect dst_local = ResolveImageRectangle( dst, dstrect );
@@ -723,7 +812,18 @@ void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect*
         {
             x = ((dstx * w_ratio) >> 16);
             y = ((dsty * h_ratio) >> 16);
-            *dst_pixel = *((uint32_t*)src->pixels + y * src->w + x);
+            uint32_t pixval = *((uint32_t*)src->pixels + y * src->w + x);
+            if ( alpha == AlphaIgnore )
+            {
+                *dst_pixel = pixval;
+            }
+            else if ( alpha == AlphaBinary )
+            {
+                if ( !(pixval & TRANSPARENT_MASK) )
+                {
+                    *dst_pixel = pixval;
+                }
+            }
             dst_pixel++;
         }
 

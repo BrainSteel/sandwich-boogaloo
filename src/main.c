@@ -320,7 +320,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         if ( win_handle )
         {
 
-            if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach ))
+            if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach, NULL ))
             {
                 MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
                 return 1;
