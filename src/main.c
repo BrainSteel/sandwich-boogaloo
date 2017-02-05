@@ -148,6 +148,9 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
 {
+
+//    PlaySoundA("Ring05.wav", NULL, SND_LOOP | SND_ASYNC);
+
     // Get the frequency of the high performance timer
     uint64_t tickfreq = GetTickFrequency( );
 
