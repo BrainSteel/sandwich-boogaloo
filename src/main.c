@@ -71,25 +71,12 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
             HDC device_context = GetDC( win_handle );
             if ( device_context )
             {
-                ClearBitmap( &screen, BLACK );
-                RGB col;
-                col.r = 255;
-                col.g = 0;
-                col.b = 0;
-
-                Rect menu_rect;
-                menu_rect.x = screen.w - 380;
-                menu_rect.y = 0;
-                menu_rect.w = 380;
-                menu_rect.h = screen.h;
-
-                FillRectangle( &screen, &menu_rect, col );
-
                 Rect game_rect;
                 game_rect.x = 0;
                 game_rect.y = 0;
                 game_rect.w = screen.w - 380;
                 game_rect.h = screen.h;
+                ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
                 RenderGameState( &screen, &game_rect, &state, 0 );
 
                 UpdateWindowImage( device_context, &screen, NULL, NULL );
@@ -229,6 +216,12 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         if ( win_handle )
         {
 
+            if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach ))
+            {
+                MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
+                return 1;
+            }
+
             if ( !ResizeWindowImage( win_handle, &screen ))
             {
                 sprintf( error_buf, "Failed to resize the window." );
@@ -280,25 +273,12 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                     HDC device_context = GetDC( win_handle );
                     if ( device_context )
                     {
-                        ClearBitmap( &screen, BLACK );
-                        RGB col;
-                        col.r = 255;
-                        col.g = 0;
-                        col.b = 0;
-
-                        Rect menu_rect;
-                        menu_rect.x = screen.w - 380;
-                        menu_rect.y = 0;
-                        menu_rect.w = 380;
-                        menu_rect.h = screen.h;
-
-                        FillRectangle( &screen, &menu_rect, col );
-
                         Rect game_rect;
                         game_rect.x = 0;
                         game_rect.y = 0;
                         game_rect.w = screen.w - 380;
                         game_rect.h = screen.h;
+                        ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
                         RenderGameState( &screen, &game_rect, &state, 0 );
 
                         UpdateWindowImage( device_context, &screen, NULL, NULL );

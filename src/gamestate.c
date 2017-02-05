@@ -69,13 +69,6 @@ static Entity* GetFreeEntity( GameState* state )
     return result;
 }
 
-static void DestroyEntity( GameState* state, Entity* entity )
-{
-    entity->flags &= ~ENTITY_ACTIVE;
-    entity->next = state->free_entity;
-    state->free_entity = entity;
-}
-
 Entity* AddBlank( GameState* state, int grid_x, int grid_y )
 {
     Entity* blank = GetFreeEntity( state );
@@ -107,6 +100,13 @@ Entity* AddWall( GameState* state, int grid_x, int grid_y )
     wall->flags |= ENTITY_COLLIDES;
 
     return wall;
+}
+
+void DestroyEntity( GameState* state, Entity* entity )
+{
+    entity->flags &= ~ENTITY_ACTIVE;
+    entity->next = state->free_entity;
+    state->free_entity = entity;
 }
 
 void UpdateGameState( GameState* state, float elapsed )

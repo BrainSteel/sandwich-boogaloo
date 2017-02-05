@@ -74,6 +74,11 @@ typedef struct Entity
     struct Entity* next;
 } Entity;
 
+typedef struct TextureSet
+{
+    Bitmap beach;
+} TextureSet;
+
 typedef struct GameState
 {
     MemoryPool* pool;
@@ -97,12 +102,15 @@ typedef struct GameState
     Entity* entities;
     uint32_t numentities;
 
+    TextureSet textures;
+
 } GameState;
 
 int InitializeGameState( GameState* state );
 Entity* AddBlank( GameState* state, int grid_x, int grid_y );
 Entity* AddPlayer( GameState* state, int grid_x, int grid_y, int input_index );
 Entity* AddWall( GameState* state, int grid_x, int grid_y );
+void DestroyEntity( GameState* state, Entity* entity );
 void UpdateGameState( GameState* state, float elapsed );
 void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, float elapsed );
 

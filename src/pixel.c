@@ -452,9 +452,9 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                 break;
 
                 case 24:
-                    r = *(char*)read_pixel;
+                    b = *(char*)read_pixel;
                     g = *(char*)(read_pixel + 1);
-                    b = *(char*)(read_pixel + 2);
+                    r = *(char*)(read_pixel + 2);
                 break;
 
                 case 32:
@@ -534,6 +534,54 @@ void ClearBitmap( Bitmap* img, ClearColor col )
     {
         memset( img->pixels, 0, size );
     }
+}
+
+void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty )
+{
+
+    Rect src_local;
+    if ( srcrect )
+    {
+        src_local = *srcrect;
+    }
+    else
+    {
+        src_local.x = 0;
+        src_local.y = 0;
+        src_local.w = src->w;
+        src_local.h = src->h;
+    }
+
+    int32_t dstrem = dst->w - dstx;
+    if ( dstrem < 0 )
+    {
+        return;
+    }
+
+    uint32_t scanlen = dstrem > src->w ? src->w : dstrem;
+
+    if ( src_local.y < 0 )
+    {
+        src_local.w += src_local.y;
+        src_local.y = 0;
+    }
+
+
+    uint32_t* dst_start = (uint32_t*)dst->pixels + dstx + dsty * dst->w;
+    const uint32_t* src_start = (uint32_t*)src->pixels + src_local.x + src_local.y * src->w;
+
+    int y;
+    for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
+    {
+        memcpy( dst_start, src_start, scanlen * sizeof( uint32_t ));
+        dst_start += dst->w;
+        src_start += src->w;
+    }
+}
+
+void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect )
+{
+
 }
 
 void DrawHorizontalLine( Bitmap* img, int xstart, int xend, int y, RGB color )

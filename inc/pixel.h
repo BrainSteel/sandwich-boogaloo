@@ -53,10 +53,10 @@ static inline void WriteRGB( uint32_t* towrite, uint8_t r, uint8_t g, uint8_t b 
 int CreateImage( Bitmap* img, uint32_t w, uint32_t h );
 int ResizeImage( Bitmap* img, uint32_t w, uint32_t h );
 void FillRectangle( Bitmap* img, const Rect* dst, RGB col );
-void ImageBlit( Bitmap* src, Bitmap* dst, const Rect* srcrect, int dstx, int dsty );
-void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect );
 int LoadImageFromFile( const char* filename, Bitmap* img );
 void DestroyImage( Bitmap* screen_img );
+void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty );
+void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect );
 void ClearBitmap( Bitmap* img, ClearColor col );
 void DrawHorizontalLine( Bitmap* img, int xstart, int xend, int y, RGB color );
 void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color );
