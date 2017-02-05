@@ -6,9 +6,9 @@
 #include "common.h"
 #include "pixel.h"
 #include "screen.h"
+#include "gamestate.h"
 #include "menu.h"
 #include "string.h"
-#include "gamestate.h"
 #include "pool.h"
 
 Bitmap screen;
@@ -17,7 +17,7 @@ GameState state;
 
 char error_buf[256];
 
-void Paint( Bitmap* target, HWND win_handle, int x, int y, char* win_type );
+void Paint( Bitmap* target, HWND win_handle, UINT message, int x, int y, char* win_type );
 
 LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, LPARAM lparam )
 {
@@ -43,9 +43,9 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
         case WM_MOUSEMOVE:
         {
-            x = GET_X_LPARAM( lparam );
-            y = GET_Y_LPARAM( lparam );
-            UpdatemainMenu( x, y );
+            state.in.mousex = GET_X_LPARAM( lparam );
+            state.in.mousey = GET_Y_LPARAM( lparam );
+            UpdateMainMenu( &state.main_menu, state.in.mousex, state.in.mousey, state.in.mousestate );
         }
         break;
 
@@ -53,13 +53,13 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
         // to the screen.
         case WM_PAINT:
         {
-            Paint( &main_menu, win_handle, x, y, "MainMenu" );
+            Paint( &main_menu, win_handle, message, x, y, "MainMenu" );
         }
         break;
 
         case WM_LBUTTONDOWN:
         {
-
+            state.in.mousestate = MOUSE_LDOWN;
         }
         break;
 
@@ -75,7 +75,7 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
     return result;
 }
 
-void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, char* win_type )
+void Paint( Bitmap* target, HWND win_handle, UINT message, int mouse_x, int mouse_y, char* win_type )
 {
     HDC device_context = GetDC( win_handle );
     ClearBitmap( target, BLACK );
@@ -90,16 +90,52 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, char* win
     rect.w = 380;
     rect.h = 720;
 
+    // Replace this
     if( !strcmp( win_type, "MainMenu" ) )
     {
-        DisplayMainMenu( &main_menu, mouse_x, mouse_y );
+        DisplayMainMenu( device_context, &state.main_menu, &main_menu, mouse_x, mouse_y );
     }
     else if( !strcmp( win_type, "GameScreen" ) )
     {
         FillRectangle( target, &rect, col );
     }
 
+
+    SetTextColor( device_context, RGB(255, 0, 0) );
+
+    LPCTSTR start_str = "START";
+    LPCTSTR help_str = "HELP";
+    LPCTSTR quit_str = "QUIT";
+
+    RECT start_rect_text;
+    start_rect_text.left = state.main_menu.start_rect.x + WIDGET_X_TEXT_BUFFER;
+    start_rect_text.top = state.main_menu.start_rect.y + WIDGET_Y_TEXT_BUFFER;
+    start_rect_text.right = state.main_menu.start_rect.x + state.main_menu.start_rect.w;
+    start_rect_text.bottom = state.main_menu.start_rect.y + state.main_menu.start_rect.h;
+
+    RECT help_rect_text;
+    help_rect_text.left = state.main_menu.help_rect.x + WIDGET_X_TEXT_BUFFER;
+    help_rect_text.top = state.main_menu.help_rect.y + WIDGET_Y_TEXT_BUFFER;
+    help_rect_text.right = state.main_menu.help_rect.x + state.main_menu.help_rect.w;
+    help_rect_text.bottom = state.main_menu.help_rect.y + state.main_menu.help_rect.h;
+
+    RECT quit_rect_text;
+    quit_rect_text.left = state.main_menu.quit_rect.x + WIDGET_X_TEXT_BUFFER;
+    quit_rect_text.top = state.main_menu.quit_rect.y + WIDGET_Y_TEXT_BUFFER;
+    quit_rect_text.right = state.main_menu.quit_rect.x + state.main_menu.quit_rect.w;
+    quit_rect_text.bottom = state.main_menu.quit_rect.y + state.main_menu.quit_rect.h;
+
+    printf("Left: %ld\n", start_rect_text.left);
+    printf("Top: %ld\n", start_rect_text.top);
+    printf("Right: %ld\n", start_rect_text.right);
+    printf("Bottom: %ld\n", start_rect_text.bottom);
+
     UpdateWindowImage( device_context, target, NULL, NULL );
+
+    DrawText( device_context, start_str, -1, &start_rect_text, DT_NOCLIP );
+    DrawText( device_context, help_str, -1, &help_rect_text, DT_NOCLIP );
+    DrawText( device_context, quit_str, -1, &quit_rect_text, DT_NOCLIP );
+
     ReleaseDC( win_handle, device_context );
 }
 
@@ -119,6 +155,8 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
     // A name for the class, which is not user-visible and is unfortunately necessary.
     window_class.lpszClassName = "SandwichWindowClass";
+
+    CreateMainMenu( &state.main_menu, &main_menu );
 
     // The icon (in the upper left-hand corner) for the windows we will make is
     // loaded as an image. MAKEINTRESOURCE( ICON ) identifies the image to load,

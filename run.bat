@@ -1,0 +1,5 @@
+
+
+cd bin && test
+
+cd ..

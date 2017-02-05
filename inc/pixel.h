@@ -2,6 +2,7 @@
 #define PIXEL_H
 
 #include "windows.h"
+#include "common.h"
 #include "stdint.h"
 #include "stdio.h"
 

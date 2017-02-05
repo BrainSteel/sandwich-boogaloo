@@ -3,6 +3,8 @@
 #ifndef POOL_H
 #define POOL_H
 
+#include "common.h"
+
 #define MEMORY_SECTION_NUM 16
 
 typedef struct MemorySection

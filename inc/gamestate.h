@@ -3,15 +3,14 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
+#include "common.h"
+#include "menu.h"
 #include "pool.h"
 
 #define ENTITY_PLAYERCONTROLLED (1 << 0)
 #define ENTITY_COLLIDES         (1 << 1)
 #define ENTITY_MOVES            (1 << 2)
 #define ENTITY_CAMERAFOCUS      (1 << 3)
-
-#define MOUSE_LDOWN (1 << 0)
-#define MOUSE_RDOWN (1 << 1)
 
 typedef enum PlayerKeys
 {
@@ -47,6 +46,8 @@ typedef struct Entity
 typedef struct GameState
 {
     MemoryPool* pool;
+
+    MainMenu main_menu;
 
     uint32_t gridw, gridh;
     uint32_t grid_m;
