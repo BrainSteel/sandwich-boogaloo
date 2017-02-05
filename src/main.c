@@ -101,52 +101,31 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
         case WM_KEYDOWN:
         {
-            switch( wparam )
+            // If the 30th bit of lparam is set, then the key was already down before this message.
+            // We are only interested in the initial keypress, not what happens when it is held.
+            if ( !(lparam & (1 << 30)))
             {
-                case 0x57:
-                    state.in[0].keydown[KeyUp] = 1;
-                break;
+                switch( wparam )
+                {
+                    case 0x57:
+                        state.in[0].keydown[KeyUp] = 1;
+                    break;
 
-                case 0x53:
-                    state.in[0].keydown[KeyDown] = 1;
-                break;
+                    case 0x53:
+                        state.in[0].keydown[KeyDown] = 1;
+                    break;
 
-                case 0x41:
-                    state.in[0].keydown[KeyLeft] = 1;
-                break;
+                    case 0x41:
+                        state.in[0].keydown[KeyLeft] = 1;
+                    break;
 
-                case 0x44:
-                    state.in[0].keydown[KeyRight] = 1;
-                break;
+                    case 0x44:
+                        state.in[0].keydown[KeyRight] = 1;
+                    break;
 
-                default:
-                break;
-            }
-        }
-        break;
-
-        case WM_KEYUP:
-        {
-            switch( wparam )
-            {
-                case 0x57:
-                    state.in[0].keydown[KeyUp] = 0;
-                break;
-
-                case 0x53:
-                    state.in[0].keydown[KeyDown] = 0;
-                break;
-
-                case 0x41:
-                    state.in[0].keydown[KeyLeft] = 0;
-                break;
-
-                case 0x44:
-                    state.in[0].keydown[KeyRight] = 0;
-                break;
-
-                default:
-                break;
+                    default:
+                    break;
+                }
             }
         }
         break;
@@ -258,6 +237,9 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
 {
+
+//    PlaySoundA("Ring05.wav", NULL, SND_LOOP | SND_ASYNC);
+
     // Get the frequency of the high performance timer
     uint64_t tickfreq = GetTickFrequency( );
 
