@@ -1,5 +1,4 @@
 
-
 cd bin && test
 
 cd ..

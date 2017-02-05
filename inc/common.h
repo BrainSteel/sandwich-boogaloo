@@ -2,7 +2,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "stdint.h"
+
 #define ICON 101
+
+#define FRAMERATE 25
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720

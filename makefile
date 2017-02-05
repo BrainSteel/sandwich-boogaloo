@@ -8,13 +8,13 @@ SRC=src
 RSC=rsc
 
 # C source files
-SOURCES = main.c pixel.c screen.c menu.c
+SOURCES = main.c pixel.c screen.c menu.c gamestate.c pool.c
 
 # RC resource scripts
 RESOURCE_SCRIPTS = resource.rc
 
 # Resources to be copied to the BIN directory
-RESOURCES =
+RESOURCES = BG_Beach.bmp
 
 # Destination paths of objects and resource files
 OBJECTS = $(SOURCES:%.c=$(OBJ)\\%.o)
