@@ -38,8 +38,22 @@ void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
         dst_local.h = img->h;
     }
 
-    dst_local.x = dst_local.x < 0 ? 0 : dst_local.x;
-    dst_local.y = dst_local.y < 0 ? 0 : dst_local.y;
+    if ( dst_local.x < 0 )
+    {
+        dst_local.w += dst_local.x;
+        dst_local.x = 0;
+    }
+
+    if ( dst_local.y < 0 )
+    {
+        dst_local.h += dst_local.y;
+        dst_local.y = 0;
+    }
+
+    if ( dst_local.w < 0 || dst_local.h < 0 )
+    {
+        return;
+    }
 
     int x, y;
     uint32_t* pixel_row = (uint32_t*)img->pixels + dst_local.x + dst_local.y * img->w;
@@ -538,7 +552,6 @@ void ClearBitmap( Bitmap* img, ClearColor col )
 
 void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty )
 {
-
     Rect src_local;
     if ( srcrect )
     {

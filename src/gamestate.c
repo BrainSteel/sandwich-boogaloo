@@ -34,7 +34,7 @@ int InitializeGameState( GameState* state )
 
     state->entities = state->pool->sections[state->entity_section].begin;
     state->camera_follow = AddBlank( state, 0, 0 );
-    AddPlayer( state, 1, 1, 0 );
+    AddPlayer( state, 0, 0, 0 );
 
     state->numentities = 2;
     return 1;
@@ -74,7 +74,9 @@ Entity* AddBlank( GameState* state, int grid_x, int grid_y )
     Entity* blank = GetFreeEntity( state );
 
     blank->grid_x = grid_x;
-    blank->grid_y = grid_y;;
+    blank->grid_y = grid_y;
+
+    blank->flags |= ENTITY_INVISIBLE;
 
     return blank;
 }
@@ -115,56 +117,63 @@ void UpdateGameState( GameState* state, float elapsed )
     for ( i = 0; i < state->numentities; i++ )
     {
         Entity* entity = &state->entities[i];
-        if ( entity->dy == 0.0f && entity->dx == 0.0f )
-        {
-            if ( entity->flags & ENTITY_PLAYERCONTROLLED )
-            {
-                if ( state->in[entity->controller].keydown[KeyUp] )
-                {
-                    entity->dy = -0.1;
-                }
-                else if ( state->in[entity->controller].keydown[KeyDown] )
-                {
-                    entity->dy = 0.1;
-                }
-
-                if( state->in[entity->controller].keydown[KeyLeft] )
-                {
-                    entity->dx = -0.1;
-                }
-                else if (state->in[entity->controller].keydown[KeyRight])
-                {
-                    entity->dx = 0.1;
-                }
-            }
-        }
 
         entity->off_x += entity->dx;
         entity->off_y += entity->dy;
-        if ( entity->off_x > state->grid_m )
+        if ( entity->off_x >= state->grid_m / 2 )
         {
             entity->dx = 0;
             entity->grid_x++;
             entity->off_x -= state->grid_m;
         }
-        else if ( entity->off_x < -state->grid_m )
+        else if ( entity->off_x <= -state->grid_m / 2 )
         {
             entity->dx = 0;
             entity->grid_x--;
             entity->off_x += state->grid_m;
         }
 
-        if ( entity->off_y > state->grid_m )
+        if ( entity->off_y >= state->grid_m / 2 )
         {
             entity->dy = 0;
             entity->grid_y++;
             entity->off_y -= state->grid_m;
         }
-        else if ( entity->off_y < -state->grid_m )
+        else if ( entity->off_y <= -state->grid_m / 2 )
         {
             entity->dy = 0;
             entity->grid_y--;
             entity->off_y += state->grid_m;
+        }
+
+        if ( entity->dy == 0.0f && entity->dx == 0.0f )
+        {
+#define MOVEMENT_SPEED 1.0f
+
+            if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+            {
+                if ( state->in[entity->controller].keydown[KeyUp] )
+                {
+                    entity->dy = -MOVEMENT_SPEED;
+                    state->in[entity->controller].keydown[KeyUp] = 0;
+                }
+                else if ( state->in[entity->controller].keydown[KeyDown] )
+                {
+                    entity->dy = MOVEMENT_SPEED;
+                    state->in[entity->controller].keydown[KeyDown] = 0;
+                }
+
+                if( state->in[entity->controller].keydown[KeyLeft] )
+                {
+                    entity->dx = -MOVEMENT_SPEED;
+                    state->in[entity->controller].keydown[KeyLeft] = 0;
+                }
+                else if (state->in[entity->controller].keydown[KeyRight])
+                {
+                    entity->dx = MOVEMENT_SPEED;
+                    state->in[entity->controller].keydown[KeyRight] = 0;
+                }
+            }
         }
     }
 }
@@ -196,30 +205,25 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
         camera_y = state->camera_follow->grid_y;
     }
 
-
     float ppmw = dst_local.w / state->screenw_m;
     float ppmh = dst_local.h / state->screenh_m;
-    float grid_wide = state->screenw_m / state->grid_m;
-    float grid_high = state->screenh_m / state->grid_m;
     float left_edge = -state->screenw_m / 2 + camera_off_x;
     float top_edge = -state->screenh_m / 2 + camera_off_y;
-    float start_x = left_edge - (int)left_edge;
-    float start_y = top_edge - (int)top_edge;
 
     RGB white;
     white.r = 255;
     white.g = 255;
     white.b = 255;
 
-    int x, y;
-    for ( x = 0; x < grid_wide; x++ )
+    float x, y;
+    for ( x = -(int)(state->screenw_m / 2); x < (int)(state->screenw_m / 2) + 1; x += state->grid_m )
     {
-        DrawVerticalLine( screen, 0, dst_local.h - 1, x * ppmw + start_x, white );
+        DrawVerticalLine( screen, 0, dst_local.h - 1, (x - left_edge) * ppmw, white );
     }
 
-    for ( y = 0; y < grid_high; y++ )
+    for ( y = -(int)(state->screenh_m / 2); y < (int)(state->screenh_m / 2) + 1; y += state->grid_m )
     {
-        DrawHorizontalLine( screen, 0, dst_local.w - 1, y * ppmh + start_y, white );
+        DrawHorizontalLine( screen, 0, dst_local.w - 1, (y - top_edge) * ppmh, white );
     }
 
     int i;
@@ -232,8 +236,8 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
             int relgrid_y = entity->grid_y - camera_y;
 
             Rect dstentity;
-            dstentity.x = (relgrid_x + entity->off_x) * ppmw - left_edge;// + entity->off_x;
-            dstentity.y = (relgrid_y + entity->off_y) * ppmh - top_edge;
+            dstentity.x = (relgrid_x + entity->off_x + entity->dx * elapsed - left_edge) * ppmw; //+ ppmw * state->screenw_m / 2;// + entity->off_x;
+            dstentity.y = (relgrid_y + entity->off_y + entity->dy * elapsed - top_edge) * ppmh;// + ppmh * state->screenh_m / 2;
             dstentity.w = state->grid_m * ppmw;
             dstentity.h = state->grid_m * ppmh;
 
