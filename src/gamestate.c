@@ -110,15 +110,10 @@ void GenerateLevel( GameState* state )
 {
     state->textures.tiletype = xorshift64star_uniform( TileNum );
 
-    int prevtop = 0;
-    int prevbot = 0;
-
     int top = 0;
     int bot = 0;
 
     AddWall( state, -8, 0 );
-
-    int midbot = 0;
 
     int x, y;
 
@@ -142,9 +137,6 @@ void GenerateLevel( GameState* state )
             AddWall( state, x, y );
         }
 
-        //AddWall( state, x, bot );
-        //AddWall( state, x, top );
-
         for ( y = bot; y < top; y++ )
         {
             AddTile( state, x, y );
@@ -153,17 +145,9 @@ void GenerateLevel( GameState* state )
                 AddItem( state, x, y );
             }
         }
-
-        if ( x == 0 )
-        {
-            midbot = bot;
-        }
-
-        prevbot = bot;
-        prevtop = top;
     }
 
-    AddCrecent( state, 7, prevtop - 1 );
+    AddCrecent( state, 7, 0 );
 
     for ( y = -6; y < 6; y++ )
     {
@@ -687,22 +671,6 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
     float ppmh = dst_local.h / state->screenh_m;
     float left_edge = -state->screenw_m / 2 + camera_off_x;
     float top_edge = -state->screenh_m / 2 + camera_off_y;
-
-    RGB white;
-    white.r = 255;
-    white.g = 255;
-    white.b = 255;
-
-    float x, y;
-    for ( x = -(int)(state->screenw_m / 2); x < (int)(state->screenw_m / 2) + 1; x += state->grid_m )
-    {
-        DrawVerticalLine( screen, 0, dst_local.h - 1, (x - left_edge) * ppmw, white );
-    }
-
-    for ( y = -(int)(state->screenh_m / 2); y < (int)(state->screenh_m / 2) + 1; y += state->grid_m )
-    {
-        DrawHorizontalLine( screen, 0, dst_local.w - 1, (y - top_edge) * ppmh, white );
-    }
 
     int i;
     for ( i = 0; i < state->numentities; i++ )
