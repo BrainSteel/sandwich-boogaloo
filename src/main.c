@@ -326,7 +326,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 return 1;
             }
 
-            /*if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread ))
+            /* ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread ))
             {
                 MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
                 return 1;
