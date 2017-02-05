@@ -30,8 +30,6 @@ typedef enum PlayerKeys
     KeyNum
 } PlayerKeys;
 
-typedef enum CameraSetting
-
 typedef enum ItemType
 {
     ItemLettuce,
@@ -109,9 +107,6 @@ typedef struct GameState
     MemoryPool* pool;
 
     MainMenu main_menu;
-
-    int score;
-
     int difficulty;
 
     int game_mode;

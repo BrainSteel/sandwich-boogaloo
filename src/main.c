@@ -280,7 +280,7 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             SelectFont( device_context, HUD_font );
             SetBkMode( device_context, TRANSPARENT );
 
-            Rect pause_button_rect;
+            /*Rect pause_button_rect;
             pause_button_rect.x = screen.w - 300;
             pause_button_rect.y = screen.h - 50;
             pause_button_rect.w = 200;
@@ -305,7 +305,7 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             DrawTextA( device_context, "Pause", -1, &pause_button_text_rect, DT_RIGHT | DT_TOP | DT_NOCLIP );
 
             HUD_font = CreateFont( 30, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                DEFAULT_QUALITY, FF_ROMAN, NULL );
+                DEFAULT_QUALITY, FF_ROMAN, NULL );*/
 
             UpdateWindowImage( device_context, &screen, NULL, NULL );
 
@@ -321,7 +321,7 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             DrawTextA( device_context, fpsbuf, -1, &textrect, DT_RIGHT | DT_TOP | DT_NOCLIP );
 
             char scorebuf[32];
-            sprintf( scorebuf, "SCORE: %u", state.score );
+            sprintf( scorebuf, "SCORE: %u", state.player_score );
 
             RECT HUD_score_rect;
             HUD_score_rect.left = HUD_rect.x;
@@ -357,6 +357,12 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 
             SetTextColor( device_context, RGB(255, 0, 0 ) );
         }
+    }
+    else if( state.game_mode == GameHelp )
+    {
+        char box_info[500] = "While in-game press ESC to Pause.\nCollect sandwich makings.\nAvoid the witch.\n";
+        if( MessageBoxA( 0, box_info, "Help", MB_OK ) == IDOK )
+        { state.game_mode = GameMenu; }
     }
     else if( state.game_mode == GameOver )
     {
@@ -413,12 +419,11 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     window_class.lpszClassName = "SandwichWindowClass";
 
     // Initialization of global game variabels
-    state.score = 0;
     state.first_time = 1;
     state.paused = 0;
 
     // NOTE: DIFFICULTY
-    state.difficulty = TEST;
+    state.difficulty = HARD;
 
     CreateMainMenu( &state.main_menu, &main_menu );
 
@@ -458,11 +463,11 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 return 1;
             }
 
-            /*if ( !LoadImageFromFile( "Menu_Beach.bmp", &state.textures.menu_beach, NULL ))
+            if ( !LoadImageFromFile( "Menu_Beach.bmp", &state.textures.menu_beach, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Menu_Beach.bmp", 0, MB_OK );
                 return 1;
-            }*/
+            }
 
             /*if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread, NULL ))
             {

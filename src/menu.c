@@ -153,7 +153,7 @@ void UpdateMainMenu( MainMenu* main_menu, int* result, int mouse_x, int mouse_y,
         {
             //printf( "BEFORE Button State: %d\n", main_menu->help_button.state );
             main_menu->help_button.state = IsSelected;
-            //*result = //HELPMENU;
+            *result = GameHelp;
             //printf( "BEFORE Button State: %d\n", main_menu->help_button.state );
         }
         else
@@ -176,7 +176,6 @@ void UpdateMainMenu( MainMenu* main_menu, int* result, int mouse_x, int mouse_y,
             //printf( "BEFORE Button State: %d\n", main_menu->quit_button.state );
             main_menu->quit_button.state = IsSelected;
             *result = GameQuit;
-            //return GameQuit;
             //printf( "BEFORE Button State: %d\n", main_menu->quit_button.state );
         }
         else

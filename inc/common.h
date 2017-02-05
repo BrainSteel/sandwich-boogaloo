@@ -28,6 +28,7 @@
 typedef enum GameMode
 {
     GameMenu,
+    GameHelp,
     GamePlaying,
     GamePaused,
     GameOver,
