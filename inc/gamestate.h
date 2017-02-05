@@ -42,6 +42,14 @@ typedef enum CameraSetting
     CameraLocked
 } CameraSetting;
 
+typedef enum GameDifficulty
+{
+    EASY,
+    MEDIUM,
+    HARD,
+    EXTREME
+} GameDifficulty;
+
 typedef struct Input
 {
     uint8_t keydown[KeyNum];
@@ -67,7 +75,13 @@ typedef struct Entity
 
 typedef struct TextureSet
 {
+    Bitmap numbers;
     Bitmap beach;
+    Bitmap bread;
+    Bitmap lettuce;
+    Bitmap quadropus;
+    Bitmap tomato;
+    Bitmap cresent;
 } TextureSet;
 
 typedef struct GameState
@@ -75,6 +89,10 @@ typedef struct GameState
     MemoryPool* pool;
 
     MainMenu main_menu;
+
+    int score;
+
+    int difficulty;
 
     int game_mode;
 

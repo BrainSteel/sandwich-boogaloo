@@ -18,6 +18,8 @@ GameState state;
 char error_buf[256];
 
 void Paint( Bitmap* target, HWND win_handle, int x, int y );
+int DrawTimeBar( GameState* state );
+void DrawNumericText( GameState* state, uint32_t score, uint32_t x_loc, uint32_t y_loc );
 
 GameState state = {0};
 char error_buf[256];
@@ -144,26 +146,26 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
 void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 {
-    int result;
-    UpdateMainMenu( &state.main_menu, &result, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
+    //int result;
+    //UpdateMainMenu( &state.main_menu, &result, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
 
-    switch(result)
+    /*switch(result)
     {
         case 0:
             break;
         case 1:
             // TODO: HERE HERE HERE
-    }
+    }*/
 
     HDC device_context = GetDC( win_handle );
 
-    if( state.game_mode == GameMenu )
+    if( 0)//state.game_mode == GameMenu )
     {
         target = &main_menu;
         ClearBitmap( target, BLACK );
         DisplayMainMenu( device_context, &state.main_menu, &main_menu, mouse_x, mouse_y );
     }
-    else if( state.game_mode == GamePlaying )
+    else if( 1)//state.game_mode == GamePlaying )
     {
         target = &screen;
         ClearBitmap( target, BLACK );
@@ -177,6 +179,20 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
             RenderGameState( &screen, &game_rect, &state, 0 );
 
+            Rect HUD_rect;
+            HUD_rect.x = game_rect.w;
+            HUD_rect.y = 0;
+            HUD_rect.w = 380;
+            HUD_rect.h = screen.h;
+
+            RGB col;
+            col.r = 0;
+            col.g = 0;
+            col.b = 0;
+
+            FillRectangle( &screen, &HUD_rect, col );
+            DrawTimeBar( &state );
+
             UpdateWindowImage( device_context, &screen, NULL, NULL );
 
             char fpsbuf[32];
@@ -189,6 +205,17 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             textrect.bottom = 19;
 
             DrawTextA( device_context, fpsbuf, -1, &textrect, DT_RIGHT | DT_TOP | DT_NOCLIP );
+
+            char scorebuf[32];
+            sprintf( scorebuf, "SCORE: %u", state.score );
+
+            RECT HUD_score_rect;
+            HUD_score_rect.left = HUD_rect.x;
+            HUD_score_rect.top = 200;
+            HUD_score_rect.right = screen.w - HUD_rect.w / 2;
+            HUD_score_rect.bottom = 20;
+
+            DrawTextA( device_context, scorebuf, -1, &HUD_score_rect, DT_RIGHT | DT_TOP | DT_NOCLIP );
 
             ReleaseDC( win_handle, device_context );
         }
@@ -258,7 +285,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     // A name for the class, which is not user-visible and is unfortunately necessary.
     window_class.lpszClassName = "SandwichWindowClass";
 
-    CreateMainMenu( &state.main_menu, &main_menu );
+    //CreateMainMenu( &state.main_menu, &main_menu );
 
     // The icon (in the upper left-hand corner) for the windows we will make is
     // loaded as an image. MAKEINTRESOURCE( ICON ) identifies the image to load,
@@ -274,6 +301,9 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     }
 
     window_class.hCursor = LoadCursor( instance, IDC_ARROW );
+
+    // NOTE: DIFFICULTY
+    state.difficulty = EXTREME;
 
     // We need to register the window class in order to use it.
     if ( RegisterClass( &window_class ))
@@ -295,6 +325,42 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
                 return 1;
             }
+
+            /*if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread ))
+            {
+                MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
+                return 1;
+            }
+
+            if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state.textures.lettuce ))
+            {
+                MessageBoxA( 0, "Failed to open Spr_Lettuce.bmp", 0, MB_OK );
+                return 1;
+            }
+
+            if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state.textures.tomato ))
+            {
+                MessageBoxA( 0, "Failed to open Spr_Tomato.bmp", 0, MB_OK );
+                return 1;
+            }
+
+            if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state.textures.quadropus ))
+            {
+                MessageBoxA( 0, "Failed to open Spr_Quadropus.bmp", 0, MB_OK );
+                return 1;
+            }
+
+            if ( !LoadImageFromFile( "NumbersText.bmp", &state.textures.numbers ))
+            {
+            MessageBoxA( 0, "Failed to open NumbersText.bmp", 0, MB_OK );
+            return 1;
+            }
+
+            if ( !LoadImageFromFile( "Spr_Cresent.bmp", &state.textures.cresent ))
+            {
+                MessageBoxA( 0, "Failed to open Spr_Cresent.bmp", 0, MB_OK );
+                return 1;
+            }*/
 
             if ( !ResizeWindowImage( win_handle, &screen ))
             {
@@ -358,7 +424,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
                     renders_this_second++;
                 }
-
+                DrawTimeBar( &state );
                 Sleep( 10 );
             }
         }
@@ -380,4 +446,118 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     DestroyImage( &screen );
 
     return 0;
+}
+
+void DisplayHUDSprites( GameState* state )
+{
+    
+}
+
+int DrawTimeBar( GameState* state )
+{
+    RGB col;
+    col.r = 255;
+    col.g = 0;
+    col.b = 0;
+
+    Rect timer_rect;
+    timer_rect.x = screen.w - 360;
+    timer_rect.y = 400;
+
+    if( state->difficulty == EASY )
+    { timer_rect.w = 340 - ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+
+    if( state->difficulty == MEDIUM )
+    { timer_rect.w = 340 - 4 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+
+    if( state->difficulty == HARD )
+    { timer_rect.w = 340 - 6 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+
+    if( state->difficulty == EXTREME )
+    { timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+
+    timer_rect.h = 30;
+
+    if( timer_rect.w <= 0 )
+    {
+        printf("HERE");
+        return 0;
+    }
+
+    FillRectangle( &screen, &timer_rect, col );
+
+    return 1;
+}
+
+
+void DrawNumericText( GameState* state, uint32_t score, uint32_t x_loc, uint32_t y_loc )
+{
+    char scorebuf[4];
+    sprintf( scorebuf, "%d", score );
+
+    // '0', the legend her?self
+    Rect score_rect_default;
+    score_rect_default.x = 0;
+    score_rect_default.y = 0;
+    score_rect_default.w = 20;
+    score_rect_default.h = 32;
+
+    // To make sure we print only valid values
+    // NOTE: Maybe do 000# and print values regardless
+    Rect score_rect_0;
+    if( 0x29 < scorebuf[0] && scorebuf[0] < 0x40 )
+    {
+        score_rect_0.x = ( scorebuf[0] - '0' ) * 20;
+        score_rect_0.y = 0;
+        score_rect_0.w = 20;
+        score_rect_0.h = 32;
+    }
+    else
+    {
+        score_rect_0 = score_rect_default;
+    }
+
+    Rect score_rect_1;
+    if( 0x29 < scorebuf[1] && scorebuf[1] < 0x40 )
+    {
+        score_rect_1.x = ( scorebuf[1] - '0' ) * 20;
+        score_rect_1.y = 0;
+        score_rect_1.w = 20;
+        score_rect_1.h = 32;
+    }
+    else
+    {
+        score_rect_1 = score_rect_default;
+    }
+
+    Rect score_rect_2;
+    if( 0x29 < scorebuf[2] && scorebuf[2] < 0x40 )
+    {
+        score_rect_2.x = ( scorebuf[2] - '0' ) * 20;
+        score_rect_2.y = 0;
+        score_rect_2.w = 20;
+        score_rect_2.h = 32;
+    }
+    else
+    {
+        score_rect_2 = score_rect_default;
+    }
+
+    Rect score_rect_3;
+    if( 0x29 < scorebuf[3] && scorebuf[3] < 0x40 )
+    {
+        score_rect_3.x = ( scorebuf[3] - '0' ) * 20;
+        score_rect_3.y = 0;
+        score_rect_3.w = 20;
+        score_rect_3.h = 32;
+    }
+    else
+    {
+        score_rect_3 = score_rect_default;
+    }
+
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_0, x_loc, y_loc );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_1, x_loc + 20, y_loc );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_2, x_loc + 20, y_loc );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_3, x_loc + 20, y_loc );
 }

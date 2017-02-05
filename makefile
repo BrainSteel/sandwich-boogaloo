@@ -14,7 +14,7 @@ SOURCES = main.c pixel.c screen.c menu.c gamestate.c pool.c
 RESOURCE_SCRIPTS = resource.rc
 
 # Resources to be copied to the BIN directory
-RESOURCES = BG_Beach.bmp Ring05.wav
+RESOURCES = BG_Beach.bmp NumbersText.bmp Ring05.wav
 
 # Destination paths of objects and resource files
 OBJECTS = $(SOURCES:%.c=$(OBJ)\\%.o)
@@ -25,7 +25,7 @@ COPIED_RESOURCES = $(RESOURCES:%=$(BIN)\\%)
 CFLAGS = -Wall -g -O0
 
 # Targets the Windows subsystem--suppresses the console window on startup
-LFLAGS = -lgdi32 -lwinmm -Wl,-subsystem,windows
+LFLAGS = -lgdi32 #-lwinmm -Wl,-subsystem,windows
 
 # The main application target
 $(BIN)\$(PROGRAM): $(COPIED_RESOURCES) $(RESOURCE_OBJECTS) $(OBJECTS) $(BIN)
