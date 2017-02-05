@@ -240,6 +240,16 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, float elap
                 else if( choice == IDRETRY )
                 {
                     // TODO: goto restart_loc;
+                    ClearSectionIndex( state.pool, state.entity_section );
+                    state.numentities = 0;
+                    state.free_entity = 0;
+                    state.player_score = 0;
+                    state.logical_frames = 0;
+                    state.camera_follow = AddBlank( &state, 0, 0 );
+
+                    GenerateLevel( &state );
+                    AddPlayer( &state, -7, 0, 0 );
+                    AddWitch( &state, 0, 0 );
                     state.paused = 0;
                 }
                 else if( choice == IDABORT )
@@ -385,12 +395,14 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, float elap
                     state.numentities = 0;
                     state.free_entity = 0;
                     state.player_score = 0;
-
+                    state.logical_frames = 0;
                     state.camera_follow = AddBlank( &state, 0, 0 );
 
                     GenerateLevel( &state );
                     AddPlayer( &state, -7, 0, 0 );
                     AddWitch( &state, 0, 0 );
+
+                    return 0;
                 }
             }
 
@@ -581,7 +593,7 @@ int DrawTimeBar( GameState* state, HDC device_context )
     { state->timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == HARD )
-    { state->timer_rect.w = 340 - 12 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 21 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == EXTREME )
     { state->timer_rect.w = 340 - 15 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
