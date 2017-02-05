@@ -83,6 +83,27 @@ int InitializeGameState( GameState* state )
         return 0;
     }
 
+    if ( !LoadImageFromFile( "Spr_Chicken.bmp", &state->textures.items[ItemChicken], &colorkey ))
+    {
+        return 0;
+    }
+    if ( !LoadImageFromFile( "Spr_GameDisc.bmp", &state->textures.items[ItemGameDisc], &colorkey ))
+    {
+        return 0;
+    }
+    if ( !LoadImageFromFile( "Spr_Mayo.bmp", &state->textures.items[ItemMayo], &colorkey ))
+    {
+        return 0;
+    }
+    if ( !LoadImageFromFile( "Spr_Mustard.bmp", &state->textures.items[ItemMustard], &colorkey ))
+    {
+        return 0;
+    }
+    if ( !LoadImageFromFile( "Spr_Jam.bmp", &state->textures.items[ItemJam], &colorkey ))
+    {
+        return 0;
+    }
+
     if ( !LoadImageFromFile( "T_BoneSand.bmp", &state->textures.tiles[TileBoneSand], &colorkey ))
     {
         return 0;
@@ -155,7 +176,8 @@ void GenerateLevel( GameState* state )
             AddTile( state, x, y );
             if ( xorshift64star_uniform( 10 ) == 0 )
             {
-                AddItem( state, x, y );
+                if ( x != 7 || y != 0 )
+                    AddItem( state, x, y );
             }
         }
     }
@@ -266,7 +288,7 @@ Entity* AddItem( GameState* state, int grid_x, int grid_y )
 
     item->flags |= ENTITY_INTERACTIVE | ENTITY_ITEM;
 
-    int rnd = xorshift64star_uniform( 10 );
+    int rnd = xorshift64star_uniform( 20 );
     if ( rnd == 0 )
     {
         item->type = ItemQuadropus;
@@ -277,10 +299,35 @@ Entity* AddItem( GameState* state, int grid_x, int grid_y )
         item->type = ItemTomato;
         item->score = 30;
     }
-    else
+    else if ( rnd < 7 )
     {
         item->type = ItemLettuce;
         item->score = 20;
+    }
+    else if ( rnd < 10 )
+    {
+        item->type = ItemChicken;
+        item->score = 35;
+    }
+    else if ( rnd < 13 )
+    {
+        item->type = ItemGameDisc;
+        item->score = 15;
+    }
+    else if ( rnd < 15 )
+    {
+        item->type = ItemMayo;
+        item->score = 25;
+    }
+    else if ( rnd < 17 )
+    {
+        item->type = ItemMustard;
+        item->score = 32;
+    }
+    else
+    {
+        item->type = ItemJam;
+        item->score = 40;
     }
 
     item->texture = &state->textures.items[item->type];

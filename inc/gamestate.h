@@ -36,6 +36,11 @@ typedef enum ItemType
     ItemTomato,
     ItemQuadropus,
     ItemCrecent,
+    ItemJam,
+    ItemMayo,
+    ItemMustard,
+    ItemGameDisc,
+    ItemChicken,
     ItemNum
 } ItemType;
 
