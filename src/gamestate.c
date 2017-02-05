@@ -1,4 +1,6 @@
 
+#include "windows.h"
+
 #include "common.h"
 #include "xorshiftstar.h"
 #include "gamestate.h"
@@ -97,6 +99,10 @@ int InitializeGameState( GameState* state )
 
     GenerateLevel( state );
 
+    AddPlayer( state, -7, 0, 0 );
+
+    AddWitch( state, 0, 0 );
+
     return 1;
 }
 
@@ -163,10 +169,6 @@ void GenerateLevel( GameState* state )
     {
         AddWall( state, 8, y );
     }
-
-    AddPlayer( state, -7, 0, 0 );
-
-    AddWitch( state, 0, midbot );
 }
 
 static Entity* GetFreeEntity( GameState* state )
@@ -451,8 +453,21 @@ void UpdateGameState( GameState* state, float elapsed )
                             if ( secondary->type == ItemCrecent )
                             {
                                 state->start_next_level = 1;
+
                                 entity->grid_x = -7;
                                 entity->grid_y = 0;
+
+                                Entity* tmpplayer = PUSH_STRUCT_INDEX( Entity, state->pool, state->transient_section );
+                                memcpy( tmpplayer, entity, sizeof( Entity ));
+                                ClearSectionIndex( state->pool, state->entity_section );
+                                state->numentities = 0;
+                                state->free_entity = NULL;
+                                state->camera_follow = AddBlank( state, 0, 0 );
+                                GenerateLevel( state );
+                                Entity* new = GetFreeEntity( state );
+                                memcpy( new, tmpplayer, sizeof( Entity ));
+                                ClearSectionIndex( state->pool, state->transient_section );
+                                AddWitch( state, 0, 0 );
                             }
                             else
                             {
@@ -465,6 +480,8 @@ void UpdateGameState( GameState* state, float elapsed )
                                   secondary->grid_x == entity->grid_x &&
                                   secondary->grid_y == entity->grid_y )
                         {
+                            //Beep( 400, 500 );
+                            //Beep( 200, 1000 );
                             state->game_over = 1;
                         }
                     }

@@ -153,7 +153,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     xorshiftseed( time( 0 ));
 
 
-//    PlaySoundA("Ring05.wav", NULL, SND_LOOP | SND_ASYNC);
+    PlaySoundA( "music.wav", NULL, SND_LOOP | SND_ASYNC );
 
     // Get the frequency of the high performance timer
     uint64_t tickfreq = GetTickFrequency( );
