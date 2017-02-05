@@ -17,6 +17,8 @@
 
 #define MOUSE_LDOWN (1 << 0)
 #define MOUSE_RDOWN (1 << 1)
+#define MOUSE_LUP (1 << 2)
+#define MOUSE_RUP (1 << 3)
 
 #define SIZE_ARRAY( arr ) (( sizeof(arr) / sizeof(arr[0]) ))
 
@@ -26,6 +28,7 @@ typedef enum GameMode
     GameMenu,
     GamePlaying,
     GamePaused,
+    GameOver,
     GameQuit
 } GameMode;
 

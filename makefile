@@ -8,7 +8,7 @@ SRC=src
 RSC=rsc
 
 # C source files
-SOURCES = main.c pixel.c screen.c gamestate.c pool.c
+SOURCES = main.c pixel.c screen.c gamestate.c pool.c menu.c
 
 # RC resource scripts
 RESOURCE_SCRIPTS = resource.rc

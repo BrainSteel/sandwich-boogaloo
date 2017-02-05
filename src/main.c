@@ -17,8 +17,8 @@ GameState state;
 
 char error_buf[256];
 
-void Paint( Bitmap* target, HWND win_handle, int x, int y );
-int DrawTimeBar( GameState* state );
+int Paint( Bitmap* target, HWND win_handle, int x, int y );
+int DrawTimeBar( GameState* state, HDC device_context );
 void DrawNumericText( GameState* state, uint32_t score, uint32_t x_loc, uint32_t y_loc );
 
 GameState state = {0};
@@ -91,6 +91,7 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
         // to the screen.
         case WM_PAINT:
         {
+            //DrawNumericText( &state, state.score, 900, 100 );
             Paint( &main_menu, win_handle, x, y );
         }
         break;
@@ -98,6 +99,12 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
         case WM_LBUTTONDOWN:
         {
             state.in[0].mousestate = MOUSE_LDOWN;
+        }
+        break;
+
+        case WM_LBUTTONUP:
+        {
+            state.in[0].mousestate = MOUSE_LUP;
         }
         break;
 
@@ -144,31 +151,65 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
     return result;
 }
 
-void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
+// TODO: Get rid of the target param?
+int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 {
-    //int result;
-    //UpdateMainMenu( &state.main_menu, &result, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
-
-    /*switch(result)
-    {
-        case 0:
-            break;
-        case 1:
-            // TODO: HERE HERE HERE
-    }*/
-
     HDC device_context = GetDC( win_handle );
 
-    if( 0)//state.game_mode == GameMenu )
+    if( state.game_mode == GameMenu )
     {
-        target = &main_menu;
-        ClearBitmap( target, BLACK );
+        //target = &main_menu;
+        ClearBitmap( &main_menu, BLACK );
+        UpdateMainMenu( &state.main_menu, &state.game_mode, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
         DisplayMainMenu( device_context, &state.main_menu, &main_menu, mouse_x, mouse_y );
+
+        UpdateWindowImage( device_context, &main_menu, NULL, NULL );
+
+        SetTextColor( device_context, RGB(255, 0, 0) );
+        SetBkMode( device_context, TRANSPARENT );
+
+        LPCTSTR start_str = "START";
+        LPCTSTR help_str = "HELP";
+        LPCTSTR quit_str = "QUIT";
+
+        RECT start_rect_text;
+        start_rect_text.left = state.main_menu.start_rect.x + WIDGET_X_TEXT_BUFFER;
+        start_rect_text.top = state.main_menu.start_rect.y + WIDGET_Y_TEXT_BUFFER;
+        start_rect_text.right = state.main_menu.start_rect.x + state.main_menu.start_rect.w;
+        start_rect_text.bottom = state.main_menu.start_rect.y + state.main_menu.start_rect.h;
+
+        RECT help_rect_text;
+        help_rect_text.left = state.main_menu.help_rect.x + WIDGET_X_TEXT_BUFFER;
+        help_rect_text.top = state.main_menu.help_rect.y + WIDGET_Y_TEXT_BUFFER;
+        help_rect_text.right = state.main_menu.help_rect.x + state.main_menu.help_rect.w;
+        help_rect_text.bottom = state.main_menu.help_rect.y + state.main_menu.help_rect.h;
+
+        RECT quit_rect_text;
+        quit_rect_text.left = state.main_menu.quit_rect.x + WIDGET_X_TEXT_BUFFER;
+        quit_rect_text.top = state.main_menu.quit_rect.y + WIDGET_Y_TEXT_BUFFER;
+        quit_rect_text.right = state.main_menu.quit_rect.x + state.main_menu.quit_rect.w;
+        quit_rect_text.bottom = state.main_menu.quit_rect.y + state.main_menu.quit_rect.h;
+
+        //DrawNumericText( &state, state.score, screen.w - 100, 100 );
+
+        //SetBkColor( device_context, RGB(0, 0, 0) );
+
+        /*HFONT CreateFont( nHeight, nWidth, nEscapement, nOrientation, fnWeight, fdwItalic, fdwUnderline, fdwStrikeOut,
+        fdwCharSet,fdwOutputPrecision, fdwClipPrecision, fdwQuality, fdwPitchAndFamilym  lpszFace );*/
+
+        HFONT game_font = CreateFont( 60, 75, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, FF_ROMAN, NULL );
+
+        SelectFont( device_context, game_font );
+
+        DrawText( device_context, start_str, -1, &start_rect_text, DT_NOCLIP );
+        DrawText( device_context, help_str, -1, &help_rect_text, DT_NOCLIP );
+        DrawText( device_context, quit_str, -1, &quit_rect_text, DT_NOCLIP );
     }
-    else if( 1)//state.game_mode == GamePlaying )
+    else if( state.game_mode == GamePlaying )
     {
-        target = &screen;
-        ClearBitmap( target, BLACK );
+        //target = &screen;
+        ClearBitmap( &screen, BLACK );
         if ( device_context )
         {
             Rect game_rect;
@@ -176,7 +217,7 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             game_rect.y = 0;
             game_rect.w = screen.w - 380;
             game_rect.h = screen.h;
-            ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
+            ImageBlit( &state.textures.beach, &screen, NULL, 0, 0, AlphaIgnore );
             RenderGameState( &screen, &game_rect, &state, 0 );
 
             Rect HUD_rect;
@@ -191,9 +232,15 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             col.b = 0;
 
             FillRectangle( &screen, &HUD_rect, col );
-            DrawTimeBar( &state );
+            DrawTimeBar( &state, device_context );
 
             UpdateWindowImage( device_context, &screen, NULL, NULL );
+
+            HFONT HUD_font = CreateFont( 30, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                                                                DEFAULT_QUALITY, FF_ROMAN, NULL );
+
+            SelectFont( device_context, HUD_font );
+            SetBkMode( device_context, TRANSPARENT );
 
             char fpsbuf[32];
             sprintf( fpsbuf, "FPS: %u", state.fps );
@@ -217,49 +264,41 @@ void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 
             DrawTextA( device_context, scorebuf, -1, &HUD_score_rect, DT_RIGHT | DT_TOP | DT_NOCLIP );
 
-            ReleaseDC( win_handle, device_context );
+            RECT timer_text_rect;
+            timer_text_rect.left = state.timer_rect.x;
+            timer_text_rect.top = state.timer_rect.y;
+            timer_text_rect.right = state.timer_rect.x + 100;
+            timer_text_rect.bottom = state.timer_rect.y + state.timer_rect.h;
+
+            /*HFONT CreateFont( nHeight, nWidth, nEscapement, nOrientation, fnWeight, fdwItalic, fdwUnderline, fdwStrikeOut,
+            fdwCharSet,fdwOutputPrecision, fdwClipPrecision, fdwQuality, fdwPitchAndFamilym  lpszFace );*/
+
+            /*game_font = CreateFont( 0, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                DEFAULT_QUALITY, FF_ROMAN, NULL );*/
+
+            //uint_16_t var_col;
+
+            //SelectFont( device_context, HUD_font );
+            if( state.timer_rect.w > 0 )
+            {
+                SetTextColor( device_context, RGB(255, 255, state.timer_rect.w % 255 ) );
+            }
+
+            LPCTSTR timer_str = "TIMER";
+
+            DrawText( device_context, timer_str, -1, &timer_text_rect, DT_RIGHT | DT_TOP | DT_NOCLIP );
+
+            SetTextColor( device_context, RGB(255, 0, 0 ) );
         }
     }
-
-
-    /*SetTextColor( device_context, RGB(255, 0, 0) );
-
-    LPCTSTR start_str = "START";
-    LPCTSTR help_str = "HELP";
-    LPCTSTR quit_str = "QUIT";
-
-    RECT start_rect_text;
-    start_rect_text.left = state.main_menu.start_rect.x + WIDGET_X_TEXT_BUFFER;
-    start_rect_text.top = state.main_menu.start_rect.y + WIDGET_Y_TEXT_BUFFER;
-    start_rect_text.right = state.main_menu.start_rect.x + state.main_menu.start_rect.w;
-    start_rect_text.bottom = state.main_menu.start_rect.y + state.main_menu.start_rect.h;
-
-    RECT help_rect_text;
-    help_rect_text.left = state.main_menu.help_rect.x + WIDGET_X_TEXT_BUFFER;
-    help_rect_text.top = state.main_menu.help_rect.y + WIDGET_Y_TEXT_BUFFER;
-    help_rect_text.right = state.main_menu.help_rect.x + state.main_menu.help_rect.w;
-    help_rect_text.bottom = state.main_menu.help_rect.y + state.main_menu.help_rect.h;
-
-    RECT quit_rect_text;
-    quit_rect_text.left = state.main_menu.quit_rect.x + WIDGET_X_TEXT_BUFFER;
-    quit_rect_text.top = state.main_menu.quit_rect.y + WIDGET_Y_TEXT_BUFFER;
-    quit_rect_text.right = state.main_menu.quit_rect.x + state.main_menu.quit_rect.w;
-    quit_rect_text.bottom = state.main_menu.quit_rect.y + state.main_menu.quit_rect.h;
-
-    printf("Left: %ld\n", start_rect_text.left);
-    printf("Top: %ld\n", start_rect_text.top);
-    printf("Right: %ld\n", start_rect_text.right);
-    printf("Bottom: %ld\n", start_rect_text.bottom);*/
-
-    UpdateWindowImage( device_context, target, NULL, NULL );
-
-    //DrawText( device_context, start_str, -1, &start_rect_text, DT_NOCLIP );
-    //DrawText( device_context, help_str, -1, &help_rect_text, DT_NOCLIP );
-    //DrawText( device_context, quit_str, -1, &quit_rect_text, DT_NOCLIP );
-
-    //state.game_mode = MenuAction( &state.main_menu );
+    else if( state.game_mode == GameQuit )
+    {
+        return 0;
+    }
 
     ReleaseDC( win_handle, device_context );
+
+    return 1;
 }
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
@@ -285,7 +324,10 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
     // A name for the class, which is not user-visible and is unfortunately necessary.
     window_class.lpszClassName = "SandwichWindowClass";
 
-    //CreateMainMenu( &state.main_menu, &main_menu );
+    // Initialization of global game variabels
+    state.score = 0;
+
+    CreateMainMenu( &state.main_menu, &main_menu );
 
     // The icon (in the upper left-hand corner) for the windows we will make is
     // loaded as an image. MAKEINTRESOURCE( ICON ) identifies the image to load,
@@ -319,44 +361,43 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
-
             if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach, NULL ))
             {
                 MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
                 return 1;
             }
 
-            /* ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread ))
+            /*if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
                 return 1;
             }
 
-            if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state.textures.lettuce ))
+            if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state.textures.lettuce, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Spr_Lettuce.bmp", 0, MB_OK );
                 return 1;
             }
 
-            if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state.textures.tomato ))
+            if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state.textures.tomato, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Spr_Tomato.bmp", 0, MB_OK );
                 return 1;
             }
 
-            if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state.textures.quadropus ))
+            if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state.textures.quadropus, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Spr_Quadropus.bmp", 0, MB_OK );
                 return 1;
             }
 
-            if ( !LoadImageFromFile( "NumbersText.bmp", &state.textures.numbers ))
+            if ( !LoadImageFromFile( "NumbersText.bmp", &state.textures.numbers, NULL ))
             {
             MessageBoxA( 0, "Failed to open NumbersText.bmp", 0, MB_OK );
             return 1;
             }
 
-            if ( !LoadImageFromFile( "Spr_Cresent.bmp", &state.textures.cresent ))
+            if ( !LoadImageFromFile( "Spr_Cresent.bmp", &state.textures.crecent, NULL ))
             {
                 MessageBoxA( 0, "Failed to open Spr_Cresent.bmp", 0, MB_OK );
                 return 1;
@@ -408,7 +449,8 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 float frames_passed = (ticks_passed * FRAMERATE) / (float)tickfreq;
                 while ( frames_passed < 1.0f )
                 {
-                    Paint( &main_menu, win_handle, state.in[0].mousex, state.in[0].mousey );
+                    if( !Paint( &main_menu, win_handle, state.in[0].mousex, state.in[0].mousey ) )
+                    { goto quit; }
 
                     uint64_t now = GetTicks( );
                     ticks_passed = now - start_ticks;
@@ -423,7 +465,6 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
                     renders_this_second++;
                 }
-                DrawTimeBar( &state );
                 Sleep( 10 );
             }
         }
@@ -441,6 +482,8 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         return 1;
     }
 
+quit:
+
     DestroyMemoryPool( state.pool );
     DestroyImage( &screen );
 
@@ -452,38 +495,36 @@ void DisplayHUDSprites( GameState* state )
 
 }
 
-int DrawTimeBar( GameState* state )
+int DrawTimeBar( GameState* state, HDC device_context )
 {
     RGB col;
     col.r = 255;
     col.g = 0;
     col.b = 0;
 
-    Rect timer_rect;
-    timer_rect.x = screen.w - 360;
-    timer_rect.y = 400;
+    state->timer_rect.x = screen.w - 360;
+    state->timer_rect.y = 400;
 
     if( state->difficulty == EASY )
-    { timer_rect.w = 340 - ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == MEDIUM )
-    { timer_rect.w = 340 - 4 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 4 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == HARD )
-    { timer_rect.w = 340 - 6 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 6 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == EXTREME )
-    { timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
-    timer_rect.h = 30;
+    state->timer_rect.h = 30;
 
-    if( timer_rect.w <= 0 )
+    if( state->timer_rect.w <= 0 )
     {
-        printf("HERE");
         return 0;
     }
 
-    FillRectangle( &screen, &timer_rect, col );
+    FillRectangle( &screen, &state->timer_rect, col );
 
     return 1;
 }
@@ -555,8 +596,13 @@ void DrawNumericText( GameState* state, uint32_t score, uint32_t x_loc, uint32_t
         score_rect_3 = score_rect_default;
     }
 
-    ImageBlit( &state->textures.numbers, &screen, &score_rect_0, x_loc, y_loc );
-    ImageBlit( &state->textures.numbers, &screen, &score_rect_1, x_loc + 20, y_loc );
-    ImageBlit( &state->textures.numbers, &screen, &score_rect_2, x_loc + 20, y_loc );
-    ImageBlit( &state->textures.numbers, &screen, &score_rect_3, x_loc + 20, y_loc );
+    //printf("Rect0 x: %d, Rect y: %d, Rect w: %d, Rect h: %d\n", score_rect_0.x, score_rect_0.y, score_rect_0.w, score_rect_0.h);
+    //printf("Rect1 x: %d, Rect y: %d, Rect w: %d, Rect h: %d\n", score_rect_1.x, score_rect_1.y, score_rect_1.w, score_rect_1.h);
+    //printf("Rect2 x: %d, Rect y: %d, Rect w: %d, Rect h: %d\n", score_rect_2.x, score_rect_2.y, score_rect_2.w, score_rect_2.h);
+    //printf("Rect3 x: %d, Rect y: %d, Rect w: %d, Rect h: %d\n", score_rect_3.x, score_rect_3.y, score_rect_3.w, score_rect_3.h);
+
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_0, x_loc, y_loc, AlphaIgnore );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_1, x_loc + 20, y_loc, AlphaIgnore );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_2, x_loc + 40, y_loc, AlphaIgnore );
+    ImageBlit( &state->textures.numbers, &screen, &score_rect_3, x_loc + 60, y_loc, AlphaIgnore );
 }

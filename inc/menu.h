@@ -11,8 +11,8 @@
 #define WIDGET_BUFFER 50
 #define NUM_WIDGETS 3
 
-#define WIDGET_X_TEXT_BUFFER 0
-#define WIDGET_Y_TEXT_BUFFER 0
+#define WIDGET_X_TEXT_BUFFER 50
+#define WIDGET_Y_TEXT_BUFFER 20
 
 #include "windows.h"
 

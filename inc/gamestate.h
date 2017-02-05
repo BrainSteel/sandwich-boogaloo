@@ -104,6 +104,8 @@ typedef struct GameState
 
     int game_mode;
 
+    Rect timer_rect;
+
     int32_t gridleft, gridtop, gridright, gridbottom;
     float grid_m;
     float screenw_m, screenh_m;
