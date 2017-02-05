@@ -1,5 +1,8 @@
 
+#include "common.h"
+#include "xorshiftstar.h"
 #include "gamestate.h"
+#include "pixel.h"
 
 #define KB 1024
 #define MB (1024 * KB)
@@ -29,6 +32,9 @@ int InitializeGameState( GameState* state )
 
     state->logical_frames = 0;
     state->fps = 0;
+    state->rendering_enabled = 1;
+
+    state->player_score = 0;
 
     RGB colorkey;
     colorkey.r = 255;
@@ -37,50 +43,52 @@ int InitializeGameState( GameState* state )
 
     if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state->textures.bread, &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "Spr_Crecent.bmp", &state->textures.crecent, &colorkey ))
+    if ( !CreateImage( &state->textures.player_texture, state->textures.bread.w, 1000 ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state->textures.lettuce, &colorkey ))
+    if ( !LoadImageFromFile( "Spr_SandWitch.bmp", &state->textures.witch, &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state->textures.quadropus, &colorkey ))
+    if ( !LoadImageFromFile( "Spr_Crecent.bmp", &state->textures.items[ItemCrecent], &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state->textures.tomato, &colorkey ))
+    if ( !LoadImageFromFile( "Spr_Lettuce.bmp", &state->textures.items[ItemLettuce], &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "T_BoneSand.bmp", &state->textures.bone_sand, &colorkey ))
+    if ( !LoadImageFromFile( "Spr_Quadropus.bmp", &state->textures.items[ItemQuadropus], &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "T_SesameSand.bmp", &state->textures.sesame_sand, &colorkey ))
+    if ( !LoadImageFromFile( "Spr_Tomato.bmp", &state->textures.items[ItemTomato], &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
     }
 
-    if ( !LoadImageFromFile( "T_WavySand.bmp", &state->textures.wavy_sand, &colorkey ))
+    if ( !LoadImageFromFile( "T_BoneSand.bmp", &state->textures.tiles[TileBoneSand], &colorkey ))
     {
-        MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
-        return 1;
+        return 0;
+    }
+
+    if ( !LoadImageFromFile( "T_SesameSand.bmp", &state->textures.tiles[TileSesameSand], &colorkey ))
+    {
+        return 0;
+    }
+
+    if ( !LoadImageFromFile( "T_WavySand.bmp", &state->textures.tiles[TileWavySand], &colorkey ))
+    {
+        return 0;
     }
 
     state->camera_follow = NULL;
@@ -88,10 +96,79 @@ int InitializeGameState( GameState* state )
 
     state->entities = state->pool->sections[state->entity_section].begin;
     state->camera_follow = AddBlank( state, 0, 0 );
-    AddPlayer( state, 0, 0, 0 );
 
-    state->numentities = 2;
+    GenerateLevel( state );
+
     return 1;
+}
+
+void GenerateLevel( GameState* state )
+{
+    state->textures.tiletype = xorshift64star_uniform( TileNum );
+
+    int prevtop = 0;
+    int prevbot = 0;
+
+    int top = 0;
+    int bot = 0;
+
+    AddWall( state, -8, 0 );
+
+    int midbot = 0;
+
+    int x, y;
+
+    for ( y = -6; y < 6; y++ )
+    {
+        AddWall( state, -8, y );
+    }
+
+    for( x = -7; x <= 7; x++ )
+    {
+        top = xorshift64star_range( 1, 5 );
+        bot = -xorshift64star_range( 1, 5 );
+
+        for ( y = -6; y < bot; y++ )
+        {
+            AddWall( state, x, y );
+        }
+
+        for ( y = top; y < 6; y++ )
+        {
+            AddWall( state, x, y );
+        }
+
+        //AddWall( state, x, bot );
+        //AddWall( state, x, top );
+
+        for ( y = bot; y < top; y++ )
+        {
+            AddTile( state, x, y );
+            if ( xorshift64star_uniform( 10 ) == 0 )
+            {
+                AddItem( state, x, y );
+            }
+        }
+
+        if ( x == 0 )
+        {
+            midbot = bot;
+        }
+
+        prevbot = bot;
+        prevtop = top;
+    }
+
+    AddCrecent( state, 7, prevtop - 1 );
+
+    for ( y = -6; y < 6; y++ )
+    {
+        AddWall( state, 8, y );
+    }
+
+    AddPlayer( state, -7, 0, 0 );
+
+    AddWitch( state, 0, midbot );
 }
 
 static Entity* GetFreeEntity( GameState* state )
@@ -105,6 +182,7 @@ static Entity* GetFreeEntity( GameState* state )
     else
     {
         result = PUSH_STRUCT_INDEX( Entity, state->pool, state->entity_section );
+        state->numentities++;
     }
 
     result->grid_x = 0.0f;
@@ -113,12 +191,12 @@ static Entity* GetFreeEntity( GameState* state )
     result->off_y = 0.0f;
     result->dx = 0.0f;
     result->dy = 0.0f;
-    result->ddx = 0.0f;
-    result->ddy = 0.0f;
+
+    result->score = 0;
+    result->paralyzed_duration = 0;
+    result->type = 0;
 
     result->flags = ENTITY_ACTIVE;
-
-    result->orient = OrientDown;
 
     return result;
 }
@@ -131,6 +209,7 @@ Entity* AddBlank( GameState* state, int grid_x, int grid_y )
     blank->grid_y = grid_y;
 
     blank->flags |= ENTITY_INVISIBLE;
+    blank->texture = NULL;
 
     return blank;
 }
@@ -144,6 +223,15 @@ Entity* AddPlayer( GameState* state, int grid_x, int grid_y, int input_index )
 
     player_entity->flags |= ENTITY_PLAYER;
 
+    player_entity->texture = &state->textures.player_texture;
+    player_entity->texture_rect.x = 0;
+    player_entity->texture_rect.y = player_entity->texture->h - player_entity->texture->w;
+    player_entity->texture_rect.w = player_entity->texture->w;
+    player_entity->texture_rect.h = player_entity->texture->w;
+
+    ClearBitmap( player_entity->texture, WHITE );
+    ImageBlitScaled( &state->textures.bread, player_entity->texture, NULL, &player_entity->texture_rect, AlphaBinary );
+
     return player_entity;
 }
 
@@ -153,9 +241,95 @@ Entity* AddWall( GameState* state, int grid_x, int grid_y )
     wall->grid_x = grid_x;
     wall->grid_y = grid_y;
 
-    wall->flags |= ENTITY_COLLIDES;
+    wall->flags |= ENTITY_COLLIDES | ENTITY_INVISIBLE;
 
     return wall;
+}
+
+Entity* AddTile( GameState* state, int grid_x, int grid_y )
+{
+    Entity* tile = GetFreeEntity( state );
+    tile->grid_x = grid_x;
+    tile->grid_y = grid_y;
+
+    tile->texture = &state->textures.tiles[state->textures.tiletype];
+    tile->texture_rect.x = 0;
+    tile->texture_rect.y = 0;
+    tile->texture_rect.w = tile->texture->w;
+    tile->texture_rect.h = tile->texture->h;
+
+    return tile;
+}
+
+Entity* AddItem( GameState* state, int grid_x, int grid_y )
+{
+    Entity* item = GetFreeEntity( state );
+    item->grid_x = grid_x;
+    item->grid_y = grid_y;
+
+    item->flags |= ENTITY_INTERACTIVE | ENTITY_ITEM;
+
+    int rnd = xorshift64star_uniform( 10 );
+    if ( rnd == 0 )
+    {
+        item->type = ItemQuadropus;
+        item->score = 100;
+    }
+    else if ( rnd < 5 )
+    {
+        item->type = ItemTomato;
+        item->score = 30;
+    }
+    else
+    {
+        item->type = ItemLettuce;
+        item->score = 20;
+    }
+
+    item->texture = &state->textures.items[item->type];
+    item->texture_rect.x = 0;
+    item->texture_rect.y = 0;
+    item->texture_rect.w = item->texture->w;
+    item->texture_rect.h = item->texture->h;
+
+    return item;
+}
+
+Entity* AddCrecent( GameState* state, int grid_x, int grid_y )
+{
+    Entity* crecent = GetFreeEntity( state );
+    crecent->grid_x = grid_x;
+    crecent->grid_y = grid_y;
+
+    crecent->flags |= ENTITY_INTERACTIVE | ENTITY_ITEM;
+
+    crecent->type = ItemCrecent;
+    crecent->score = 75;
+
+    crecent->texture = &state->textures.items[ItemCrecent];
+    crecent->texture_rect.x = 0;
+    crecent->texture_rect.y = 0;
+    crecent->texture_rect.w = crecent->texture->w;
+    crecent->texture_rect.h = crecent->texture->h;
+
+    return crecent;
+}
+
+Entity* AddWitch( GameState* state, int grid_x, int grid_y )
+{
+    Entity* witch = GetFreeEntity( state );
+    witch->grid_x = grid_x;
+    witch->grid_y = grid_y;
+
+    witch->flags |= ENTITY_SAND_WITCH;
+
+    witch->texture = &state->textures.witch;
+    witch->texture_rect.x = 0;
+    witch->texture_rect.y = 0;
+    witch->texture_rect.w = witch->texture->w;
+    witch->texture_rect.h = witch->texture->h;
+
+    return witch;
 }
 
 void DestroyEntity( GameState* state, Entity* entity )
@@ -167,65 +341,300 @@ void DestroyEntity( GameState* state, Entity* entity )
 
 void UpdateGameState( GameState* state, float elapsed )
 {
-    int i;
+    int i, j;
     for ( i = 0; i < state->numentities; i++ )
     {
         Entity* entity = &state->entities[i];
 
-        entity->off_x += entity->dx;
-        entity->off_y += entity->dy;
-        if ( entity->off_x >= state->grid_m / 2 )
+        if ( entity->flags & ENTITY_MOVES )
         {
-            entity->dx = 0;
-            entity->grid_x++;
-            entity->off_x -= state->grid_m;
-        }
-        else if ( entity->off_x <= -state->grid_m / 2 )
-        {
-            entity->dx = 0;
-            entity->grid_x--;
-            entity->off_x += state->grid_m;
-        }
-
-        if ( entity->off_y >= state->grid_m / 2 )
-        {
-            entity->dy = 0;
-            entity->grid_y++;
-            entity->off_y -= state->grid_m;
-        }
-        else if ( entity->off_y <= -state->grid_m / 2 )
-        {
-            entity->dy = 0;
-            entity->grid_y--;
-            entity->off_y += state->grid_m;
-        }
-
-        if ( entity->dy == 0.0f && entity->dx == 0.0f )
-        {
-#define MOVEMENT_SPEED 1.0f
-
-            if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+            entity->off_x += entity->dx;
+            entity->off_y += entity->dy;
+            if ( entity->off_x >= state->grid_m / 2 )
             {
-                if ( state->in[entity->controller].keydown[KeyUp] )
-                {
-                    entity->dy = -MOVEMENT_SPEED;
-                    state->in[entity->controller].keydown[KeyUp] = 0;
-                }
-                else if ( state->in[entity->controller].keydown[KeyDown] )
-                {
-                    entity->dy = MOVEMENT_SPEED;
-                    state->in[entity->controller].keydown[KeyDown] = 0;
-                }
+                entity->dx = 0;
+                entity->grid_x++;
+                entity->off_x -= state->grid_m;
+            }
+            else if ( entity->off_x <= -state->grid_m / 2 )
+            {
+                entity->dx = 0;
+                entity->grid_x--;
+                entity->off_x += state->grid_m;
+            }
 
-                if( state->in[entity->controller].keydown[KeyLeft] )
+            if ( entity->off_y >= state->grid_m / 2 )
+            {
+                entity->dy = 0;
+                entity->grid_y++;
+                entity->off_y -= state->grid_m;
+            }
+            else if ( entity->off_y <= -state->grid_m / 2 )
+            {
+                entity->dy = 0;
+                entity->grid_y--;
+                entity->off_y += state->grid_m;
+            }
+        }
+    }
+
+    for ( i = 0; i < state->numentities; i++ )
+    {
+        Entity* entity = &state->entities[i];
+
+        if ( entity->flags & ENTITY_MOVES )
+        {
+            int blocks[4] = {0, 0, 0, 0};
+            if ( entity->flags & ENTITY_COLLIDES )
+            {
+                for ( j = 0; j < state->numentities; j++ )
                 {
-                    entity->dx = -MOVEMENT_SPEED;
-                    state->in[entity->controller].keydown[KeyLeft] = 0;
+                    Entity* secondary = &state->entities[j];
+                    if ( secondary->flags & ENTITY_ACTIVE )
+                    {
+                        if ( secondary->flags & ENTITY_COLLIDES && !(secondary->flags & ENTITY_PLAYERCONTROLLED))
+                        {
+                            if ( secondary->grid_x == entity->grid_x &&
+                                 secondary->grid_y == entity->grid_y - 1 )
+                            {
+                                blocks[KeyUp] = 1;
+
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyUp] = 0;
+                                }
+                            }
+                            else if ( secondary->grid_x == entity->grid_x &&
+                                      secondary->grid_y == entity->grid_y + 1 )
+                            {
+                                blocks[KeyDown] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyDown] = 0;
+                                }
+                            }
+                            else if ( secondary->grid_x == entity->grid_x - 1 &&
+                                      secondary->grid_y == entity->grid_y )
+                            {
+                                blocks[KeyLeft] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyLeft] = 0;
+                                }
+                            }
+                            else if ( secondary->grid_x == entity->grid_x + 1 &&
+                                      secondary->grid_y == entity->grid_y )
+                            {
+                                blocks[KeyRight] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyRight] = 0;
+                                }
+                            }
+                        }
+
+                        if ( entity->flags & ENTITY_PLAYERCONTROLLED &&
+                             secondary->flags & ENTITY_INTERACTIVE &&
+                             secondary->flags & ENTITY_ITEM &&
+                             secondary->grid_x == entity->grid_x &&
+                             secondary->grid_y == entity->grid_y )
+                        {
+                            state->player_score += secondary->score;
+
+                            Rect blitrect;
+                            blitrect.x = 0;
+                            blitrect.y = entity->texture_rect.y - SANDWICH_STACK_OFFSET;
+                            blitrect.w = entity->texture_rect.w;
+                            blitrect.h = entity->texture_rect.w;
+
+                            entity->texture_rect.y -= SANDWICH_STACK_OFFSET;
+                            entity->texture_rect.h += SANDWICH_STACK_OFFSET;
+
+                            if ( secondary->type == ItemCrecent )
+                            {
+                                state->start_next_level = 1;
+                                entity->grid_x = -7;
+                                entity->grid_y = 0;
+                            }
+                            else
+                            {
+                                ImageBlitScaled( secondary->texture, entity->texture, NULL, &blitrect, AlphaBinary );
+                            }
+                            DestroyEntity( state, secondary );
+                        }
+                        else if ( entity->flags & ENTITY_PLAYERCONTROLLED &&
+                                  secondary->flags & ENTITY_EVIL &&
+                                  secondary->grid_x == entity->grid_x &&
+                                  secondary->grid_y == entity->grid_y )
+                        {
+                            state->game_over = 1;
+                        }
+                    }
                 }
-                else if (state->in[entity->controller].keydown[KeyRight])
+            }
+            if ( entity->dy == 0.0f && entity->dx == 0.0f )
+            {
+        #define MOVEMENT_SPEED 1.0f
+
+                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
                 {
-                    entity->dx = MOVEMENT_SPEED;
-                    state->in[entity->controller].keydown[KeyRight] = 0;
+                    if ( state->in[entity->controller].keydown[KeyUp] &&
+                         !blocks[KeyUp] )
+                    {
+                        entity->dy = -MOVEMENT_SPEED;
+                        state->in[entity->controller].keydown[KeyUp] = 0;
+                    }
+                    else if ( state->in[entity->controller].keydown[KeyDown] &&
+                              !blocks[KeyDown] )
+                    {
+                        entity->dy = MOVEMENT_SPEED;
+                        state->in[entity->controller].keydown[KeyDown] = 0;
+                    }
+                    else if( state->in[entity->controller].keydown[KeyLeft] &&
+                             !blocks[KeyLeft] )
+                    {
+                        entity->dx = -MOVEMENT_SPEED;
+                        state->in[entity->controller].keydown[KeyLeft] = 0;
+                    }
+                    else if (state->in[entity->controller].keydown[KeyRight] &&
+                             !blocks[KeyRight] )
+                    {
+                        entity->dx = MOVEMENT_SPEED;
+                        state->in[entity->controller].keydown[KeyRight] = 0;
+                    }
+                }
+                else if ( entity->flags & ENTITY_EVIL )
+                {
+                    Entity* player = NULL;
+                    for ( j = 0; j < state->numentities; j++ )
+                    {
+                        if ( state->entities[j].flags & ENTITY_ACTIVE &&
+                             state->entities[j].flags & ENTITY_PLAYERCONTROLLED )
+                        {
+                            player = &state->entities[j];
+                            break;
+                        }
+                    }
+
+                    if ( !player )
+                    {
+                        continue;
+                    }
+
+                    if ( !player->dx && !player->dy)
+                    {
+                        continue;
+                    }
+
+                    int nhigh = 0;
+                    int nlow = 0;
+                    PlayerKeys high_priority[4];
+                    PlayerKeys low_priority[4];
+                    if ( player->grid_x > entity->grid_x )
+                    {
+                        if ( !blocks[KeyRight] )
+                        {
+                            high_priority[nhigh++] = KeyRight;
+                        }
+
+                        if ( !blocks[KeyLeft] )
+                        {
+                            low_priority[nlow++] = KeyLeft;
+                        }
+                    }
+                    else if ( player->grid_x < entity->grid_x )
+                    {
+                        if ( !blocks[KeyLeft] )
+                        {
+                            high_priority[nhigh++] = KeyLeft;
+                        }
+
+                        if ( !blocks[KeyRight] )
+                        {
+                            low_priority[nlow++] = KeyRight;
+                        }
+                    }
+                    else
+                    {
+                        if ( !blocks[KeyLeft] )
+                        {
+                            low_priority[nlow++] = KeyLeft;
+                        }
+
+                        if ( !blocks[KeyRight] )
+                        {
+                            low_priority[nlow++] = KeyRight;
+                        }
+                    }
+
+                    if ( player->grid_y > entity->grid_y )
+                    {
+                        if ( !blocks[KeyDown] )
+                        {
+                            high_priority[nhigh++] = KeyDown;
+                        }
+
+                        if ( !blocks[KeyUp] )
+                        {
+                            low_priority[nlow++] = KeyUp;
+                        }
+                    }
+                    else if ( player->grid_y < entity->grid_y )
+                    {
+                        if ( !blocks[KeyUp] )
+                        {
+                            high_priority[nhigh++] = KeyUp;
+                        }
+
+                        if ( !blocks[KeyDown] )
+                        {
+                            low_priority[nlow++] = KeyDown;
+                        }
+                    }
+                    else
+                    {
+                        if ( !blocks[KeyUp] )
+                        {
+                            low_priority[nlow++] = KeyUp;
+                        }
+
+                        if ( !blocks[KeyDown] )
+                        {
+                            low_priority[nlow++] = KeyDown;
+                        }
+                    }
+
+                    PlayerKeys choice;
+                    if ( nhigh )
+                    {
+                        choice = high_priority[xorshift64star_uniform( nhigh )];
+                    }
+                    else
+                    {
+                        choice = low_priority[xorshift64star_uniform( nlow )];
+                    }
+
+                    switch ( choice )
+                    {
+                        case KeyUp:
+                            entity->dy = -MOVEMENT_SPEED;
+                        break;
+
+                        case KeyDown:
+                            entity->dy = MOVEMENT_SPEED;
+                        break;
+
+                        case KeyLeft:
+                            entity->dx = -MOVEMENT_SPEED;
+                        break;
+
+                        case KeyRight:
+                            entity->dx = MOVEMENT_SPEED;
+                        break;
+
+                        default:
+                        break;
+                    }
                 }
             }
         }
@@ -290,12 +699,19 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
             int relgrid_y = entity->grid_y - camera_y;
 
             Rect dstentity;
-            dstentity.x = (relgrid_x + entity->off_x + entity->dx * elapsed - left_edge) * ppmw; //+ ppmw * state->screenw_m / 2;// + entity->off_x;
-            dstentity.y = (relgrid_y + entity->off_y + entity->dy * elapsed - top_edge) * ppmh;// + ppmh * state->screenh_m / 2;
+            dstentity.x = (relgrid_x + entity->off_x + entity->dx * elapsed - left_edge) * ppmw;
+            dstentity.y = (relgrid_y + entity->off_y + entity->dy * elapsed - top_edge) * ppmh;
             dstentity.w = state->grid_m * ppmw;
             dstentity.h = state->grid_m * ppmh;
 
-            ImageBlitScaled( &state->textures.bread, screen, NULL, &dstentity, AlphaBinary );
+            if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+            {
+                uint32_t newh = entity->texture_rect.h * dstentity.w / entity->texture_rect.w;
+                dstentity.y -= newh - dstentity.h;
+                dstentity.h = newh;
+            }
+
+            ImageBlitScaled( entity->texture, screen, &entity->texture_rect, &dstentity, AlphaBinary );
         }
     }
 }

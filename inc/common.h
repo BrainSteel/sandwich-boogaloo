@@ -20,6 +20,8 @@
 #define MOUSE_LUP (1 << 2)
 #define MOUSE_RUP (1 << 3)
 
+#define SANDWICH_STACK_OFFSET 30
+
 #define SIZE_ARRAY( arr ) (( sizeof(arr) / sizeof(arr[0]) ))
 
 

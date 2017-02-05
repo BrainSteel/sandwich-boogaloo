@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include "time.h"
 
 #include "windows.h"
 #include "windowsx.h"
@@ -10,6 +11,7 @@
 #include "menu.h"
 #include "string.h"
 #include "pool.h"
+#include "xorshiftstar.h"
 
 Bitmap screen;
 Bitmap main_menu;
@@ -164,6 +166,7 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 {
     HDC device_context = GetDC( win_handle );
+    xorshiftseed( time( 0 ));
 
     if( state.game_mode == GameMenu )
     {
