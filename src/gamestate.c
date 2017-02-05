@@ -223,7 +223,7 @@ Entity* AddPlayer( GameState* state, int grid_x, int grid_y, int input_index )
 
     player_entity->texture = &state->textures.player_texture;
     player_entity->texture_rect.x = 0;
-    player_entity->texture_rect.y = 0;
+    player_entity->texture_rect.y = player_entity->texture->h - player_entity->texture->w;
     player_entity->texture_rect.w = player_entity->texture->w;
     player_entity->texture_rect.h = player_entity->texture->w;
 
