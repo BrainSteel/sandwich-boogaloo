@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include "time.h"
 
 #include "windows.h"
 
@@ -7,6 +8,7 @@
 #include "screen.h"
 #include "gamestate.h"
 #include "pool.h"
+#include "xorshiftstar.h"
 
 Bitmap screen;
 GameState state = {0};
@@ -148,6 +150,8 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
 {
+    xorshiftseed( time( 0 ));
+
 
 //    PlaySoundA("Ring05.wav", NULL, SND_LOOP | SND_ASYNC);
 
