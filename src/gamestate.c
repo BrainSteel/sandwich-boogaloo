@@ -49,11 +49,10 @@ int InitializeGameState( GameState* state )
         return 0;
     }
 
-    if ( !CreateImage( &state->textures.witch, 72, 72 ))
+    if ( !LoadImageFromFile( "Spr_SandWitch.bmp", &state->textures.witch, &colorkey ))
     {
         return 0;
     }
-    ClearBitmap( &state->textures.witch, BLACK );
 
     if ( !LoadImageFromFile( "Spr_Crecent.bmp", &state->textures.items[ItemCrecent], &colorkey ))
     {
