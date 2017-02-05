@@ -449,7 +449,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
 void DisplayHUDSprites( GameState* state )
 {
-    
+
 }
 
 int DrawTimeBar( GameState* state )
