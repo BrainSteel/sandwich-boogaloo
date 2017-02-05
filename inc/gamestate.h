@@ -35,13 +35,6 @@ typedef enum Orientation
     OrientRight
 } Orientation;
 
-typedef enum GameMode
-{
-    GamePlaying,
-    GameMenu,
-    GamePaused
-} GameMode;
-
 typedef enum CameraSetting
 {
     CameraFirst,
@@ -82,6 +75,8 @@ typedef struct GameState
     MemoryPool* pool;
 
     MainMenu main_menu;
+
+    int game_mode;
 
     int32_t gridleft, gridtop, gridright, gridbottom;
     float grid_m;

@@ -21,6 +21,8 @@ int InitializeGameState( GameState* state )
     state->gridright = 100;
     state->gridbottom = 100;
 
+    state->game_mode = 0;
+
     state->grid_m = 1.0;
     state->screenw_m = 25;
     state->screenh_m = 20;

@@ -17,7 +17,7 @@ GameState state;
 
 char error_buf[256];
 
-void Paint( Bitmap* target, HWND win_handle, UINT message, int x, int y, char* win_type );
+void Paint( Bitmap* target, HWND win_handle, int x, int y );
 
 GameState state = {0};
 char error_buf[256];
@@ -70,9 +70,10 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
 
         case WM_MOUSEMOVE:
         {
-            state.in.mousex = GET_X_LPARAM( lparam );
-            state.in.mousey = GET_Y_LPARAM( lparam );
-            UpdateMainMenu( &state.main_menu, state.in.mousex, state.in.mousey, state.in.mousestate );
+            state.in[0].mousex = GET_X_LPARAM( lparam );
+            state.in[0].mousey = GET_Y_LPARAM( lparam );
+            //state.game_mode = UpdateMainMenu( &state.main_menu, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
+            //UpdateMainMenu( &state.main_menu, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
         }
         break;
 
@@ -88,40 +89,13 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
         // to the screen.
         case WM_PAINT:
         {
-            Paint( &main_menu, win_handle, message, x, y, "MainMenu" );
-            // Render the frame, interpolating partial frames between logical frames.
-            HDC device_context = GetDC( win_handle );
-            if ( device_context )
-            {
-                Rect game_rect;
-                game_rect.x = 0;
-                game_rect.y = 0;
-                game_rect.w = screen.w - 380;
-                game_rect.h = screen.h;
-                ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
-                RenderGameState( &screen, &game_rect, &state, 0 );
-
-                UpdateWindowImage( device_context, &screen, NULL, NULL );
-
-                char fpsbuf[32];
-                sprintf( fpsbuf, "FPS: %u", state.fps );
-
-                RECT textrect;
-                textrect.left = screen.w - 20;
-                textrect.top = 0;
-                textrect.right = screen.w - 1;
-                textrect.bottom = 19;
-
-                DrawTextA( device_context, fpsbuf, -1, &textrect, DT_RIGHT | DT_TOP | DT_NOCLIP );
-
-                ReleaseDC( win_handle, device_context );
-            }
+            Paint( &main_menu, win_handle, x, y );
         }
         break;
 
         case WM_LBUTTONDOWN:
         {
-            state.in.mousestate = MOUSE_LDOWN;
+            state.in[0].mousestate = MOUSE_LDOWN;
         }
         break;
 
@@ -189,33 +163,60 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
     return result;
 }
 
-void Paint( Bitmap* target, HWND win_handle, UINT message, int mouse_x, int mouse_y, char* win_type )
+void Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 {
-    HDC device_context = GetDC( win_handle );
-    ClearBitmap( target, BLACK );
-    RGB col;
-    col.r = 255;
-    col.g = 0;
-    col.b = 0;
+    int result;
+    UpdateMainMenu( &state.main_menu, &result, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
 
-    Rect rect;
-    rect.x = 1280 - 380;
-    rect.y = 0;
-    rect.w = 380;
-    rect.h = 720;
-
-    // Replace this
-    if( !strcmp( win_type, "MainMenu" ) )
+    switch(result)
     {
+        case 0:
+            break;
+        case 1:
+            // TODO: HERE HERE HERE
+    }
+
+    HDC device_context = GetDC( win_handle );
+
+    if( state.game_mode == GameMenu )
+    {
+        target = &main_menu;
+        ClearBitmap( target, BLACK );
         DisplayMainMenu( device_context, &state.main_menu, &main_menu, mouse_x, mouse_y );
     }
-    else if( !strcmp( win_type, "GameScreen" ) )
+    else if( state.game_mode == GamePlaying )
     {
-        FillRectangle( target, &rect, col );
+        target = &screen;
+        ClearBitmap( target, BLACK );
+        if ( device_context )
+        {
+            Rect game_rect;
+            game_rect.x = 0;
+            game_rect.y = 0;
+            game_rect.w = screen.w - 380;
+            game_rect.h = screen.h;
+            ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
+            RenderGameState( &screen, &game_rect, &state, 0 );
+
+            UpdateWindowImage( device_context, &screen, NULL, NULL );
+
+            char fpsbuf[32];
+            sprintf( fpsbuf, "FPS: %u", state.fps );
+
+            RECT textrect;
+            textrect.left = screen.w - 20;
+            textrect.top = 0;
+            textrect.right = screen.w - 1;
+            textrect.bottom = 19;
+
+            DrawTextA( device_context, fpsbuf, -1, &textrect, DT_RIGHT | DT_TOP | DT_NOCLIP );
+
+            ReleaseDC( win_handle, device_context );
+        }
     }
 
 
-    SetTextColor( device_context, RGB(255, 0, 0) );
+    /*SetTextColor( device_context, RGB(255, 0, 0) );
 
     LPCTSTR start_str = "START";
     LPCTSTR help_str = "HELP";
@@ -242,13 +243,15 @@ void Paint( Bitmap* target, HWND win_handle, UINT message, int mouse_x, int mous
     printf("Left: %ld\n", start_rect_text.left);
     printf("Top: %ld\n", start_rect_text.top);
     printf("Right: %ld\n", start_rect_text.right);
-    printf("Bottom: %ld\n", start_rect_text.bottom);
+    printf("Bottom: %ld\n", start_rect_text.bottom);*/
 
     UpdateWindowImage( device_context, target, NULL, NULL );
 
-    DrawText( device_context, start_str, -1, &start_rect_text, DT_NOCLIP );
-    DrawText( device_context, help_str, -1, &help_rect_text, DT_NOCLIP );
-    DrawText( device_context, quit_str, -1, &quit_rect_text, DT_NOCLIP );
+    //DrawText( device_context, start_str, -1, &start_rect_text, DT_NOCLIP );
+    //DrawText( device_context, help_str, -1, &help_rect_text, DT_NOCLIP );
+    //DrawText( device_context, quit_str, -1, &quit_rect_text, DT_NOCLIP );
+
+    //state.game_mode = MenuAction( &state.main_menu );
 
     ReleaseDC( win_handle, device_context );
 }
@@ -300,7 +303,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
                                                                 SCREEN_WIDTH, SCREEN_HEIGHT, NULL, NULL, instance, NULL );
-                                                                
+
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
         {
@@ -358,34 +361,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 float frames_passed = (ticks_passed * FRAMERATE) / (float)tickfreq;
                 while ( frames_passed < 1.0f )
                 {
-                    // TODO: CALL PAINT HERE
-                    // Render the frame, interpolating partial frames between logical frames.
-                    HDC device_context = GetDC( win_handle );
-                    if ( device_context )
-                    {
-                        Rect game_rect;
-                        game_rect.x = 0;
-                        game_rect.y = 0;
-                        game_rect.w = screen.w - 380;
-                        game_rect.h = screen.h;
-                        ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
-                        RenderGameState( &screen, &game_rect, &state, 0 );
-
-                        UpdateWindowImage( device_context, &screen, NULL, NULL );
-
-                        char fpsbuf[32];
-                        sprintf( fpsbuf, "FPS: %u", state.fps );
-
-                        RECT textrect;
-                        textrect.left = screen.w - 20;
-                        textrect.top = 0;
-                        textrect.right = screen.w - 1;
-                        textrect.bottom = 19;
-
-                        DrawTextA( device_context, fpsbuf, -1, &textrect, DT_RIGHT | DT_TOP | DT_NOCLIP );
-
-                        ReleaseDC( win_handle, device_context );
-                    }
+                    Paint( &main_menu, win_handle, state.in[0].mousex, state.in[0].mousey );
 
                     uint64_t now = GetTicks( );
                     ticks_passed = now - start_ticks;

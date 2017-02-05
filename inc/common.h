@@ -18,6 +18,16 @@
 
 #define SIZE_ARRAY( arr ) (( sizeof(arr) / sizeof(arr[0]) ))
 
+
+typedef enum GameMode
+{
+    GameMenu,
+    GamePlaying,
+    GamePaused,
+    GameQuit
+} GameMode;
+
+
 extern char error_buf[256];
 
 #endif

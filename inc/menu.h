@@ -43,8 +43,9 @@ typedef struct MainMenuStruct
 }MainMenu;
 
 void CreateMainMenu( MainMenu* main_menu, Bitmap* img );
-int DisplayMainMenu( HDC dc, MainMenu* main_menu, Bitmap* img, int mouse_x, int mouse_y );
-void UpdateMainMenu( MainMenu* main_menu, int mouse_x, int mouse_y, uint8_t mousestate );
+void DisplayMainMenu( HDC dc, MainMenu* main_menu, Bitmap* img, int mouse_x, int mouse_y );
+void UpdateMainMenu( MainMenu* main_menu, int* result, int mouse_x, int mouse_y, uint8_t mousestate );
+int MenuAction( MainMenu* main_menu );
 
 
 #endif
