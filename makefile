@@ -14,7 +14,7 @@ SOURCES = main.c pixel.c screen.c gamestate.c pool.c
 RESOURCE_SCRIPTS = resource.rc
 
 # Resources to be copied to the BIN directory
-RESOURCES = BG_Beach.bmp Ring05.wav
+RESOURCES = BG_Beach.bmp Spr_BreadSlice.bmp Ring05.wav
 
 # Destination paths of objects and resource files
 OBJECTS = $(SOURCES:%.c=$(OBJ)\\%.o)

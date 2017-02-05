@@ -5,6 +5,8 @@
 #include "stdint.h"
 #include "stdio.h"
 
+#include "common.h"
+
 typedef struct Bitmap
 {
     BITMAPINFO info;
@@ -29,9 +31,6 @@ typedef enum ClearColor
     BLACK
 } ClearColor;
 
-// A small buffer that we can write errors to.
-extern char error_buf[256];
-
 // PIXEL-LEVEL RENDERING
 static inline void WriteRGB( uint32_t* towrite, uint8_t r, uint8_t g, uint8_t b )
 {
@@ -48,6 +47,11 @@ static inline void WriteRGB( uint32_t* towrite, uint8_t r, uint8_t g, uint8_t b 
     // In this case, 0x000000RR == 0x000000F0, 0x000000GG == 0x00000010, 0x000000BB == 0x00000020
 
     *towrite = (r << 16) | (g << 8) | b;
+}
+
+static inline void WriteRGBA( uint32_t* towrite, uint8_t r, uint8_t g, uint8_t b, uint8_t a )
+{
+    *towrite = (a << 24) | (r << 16) | (g << 8) | b;
 }
 
 int CreateImage( Bitmap* img, uint32_t w, uint32_t h );

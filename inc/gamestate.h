@@ -77,6 +77,7 @@ typedef struct Entity
 typedef struct TextureSet
 {
     Bitmap beach;
+    Bitmap bread;
 } TextureSet;
 
 typedef struct GameState

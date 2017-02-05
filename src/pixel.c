@@ -243,6 +243,8 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         MessageBoxA( 0, error_buf, 0, MB_OK );
         goto stop;
     }
+    int is_v4 = (bmphead.header_size > bmphead_size);
+
 
     // Read pixel formatting data
     bmphead.w = READ_BYTESTREAM( LONG, bmphead_bytes, offset );
@@ -295,9 +297,17 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
     // we read the bitmasks for r, g, and b as well.
     if ( bmphead.compression == 3 )
     {
+        uint32_t mask_size;
+        if ( is_v4 )
+        {
+            mask_size = 4 * sizeof( DWORD );
+        }
+        else
+        {
+            mask_size = 3 * sizeof( DWORD );
+        }
 
-        const uint32_t mask_size = 3 * sizeof(DWORD);
-        char mask_bytes[mask_size];
+        char mask_bytes[4];
         if ( !ReadFile( file, &mask_bytes, mask_size, &bytes_read, &ol ) ||
                         bytes_read != mask_size )
         {
@@ -321,6 +331,27 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         bmphead.bitmask.rmax = bmphead.bitmask.rmask >> bmphead.bitmask.rshift;
         bmphead.bitmask.gmax = bmphead.bitmask.gmask >> bmphead.bitmask.gshift;
         bmphead.bitmask.bmax = bmphead.bitmask.bmask >> bmphead.bitmask.bshift;
+
+        if ( is_v4 )
+        {
+            // In V4 Bitmap and above, we have an alpha channel!
+            bmphead.bitmask.amask = READ_BYTESTREAM( DWORD, mask_bytes, offset );
+            if ( BitScanReverse( &bmphead.bitmask.ashift, bmphead.bitmask.amask ))
+            {
+                bmphead.bitmask.amax = bmphead.bitmask.amask >> bmphead.bitmask.ashift;
+            }
+            else
+            {
+                bmphead.bitmask.ashift = 0;
+                bmphead.bitmask.amax = 0;
+            }
+        }
+        else
+        {
+            bmphead.bitmask.amask = 0;
+            bmphead.bitmask.ashift = 0;
+            bmphead.bitmask.amax = 0;
+        }
     }
 
     // Now, it is time to begin actually reading the bitmap data!
@@ -386,7 +417,7 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
         read_pixel = read_row;
         for ( x = 0; x < realw; x++ )
         {
-            uint8_t r, g, b;
+            uint8_t r, g, b, a = 0;
             switch (bmphead.bits_pp)
             {
                 case 16:
@@ -408,6 +439,12 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                     r = ((uint32_t)rraw * 0xFF) / bmphead.bitmask.rmax;
                     g = ((uint32_t)graw * 0xFF) / bmphead.bitmask.gmax;
                     b = ((uint32_t)braw * 0xFF) / bmphead.bitmask.bmax;
+
+                    if ( is_v4 && bmphead.bitmask.amax )
+                    {
+                        uint16_t araw = (pval & bmphead.bitmask.amask) >> bmphead.bitmask.ashift;
+                        a = ((uint32_t)araw * 0xFF) / bmphead.bitmask.amax;
+                    }
                 }
                 break;
 
@@ -436,6 +473,12 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                     r = (rraw * 0xFF) / bmphead.bitmask.rmax;
                     g = (graw * 0xFF) / bmphead.bitmask.gmax;
                     b = (braw * 0xFF) / bmphead.bitmask.bmax;
+
+                    if ( is_v4 && bmphead.bitmask.amax )
+                    {
+                        uint32_t araw = (pval & bmphead.bitmask.amask) >> bmphead.bitmask.ashift;
+                        a = (araw * 0xFF) / bmphead.bitmask.amax;
+                    }
                 }
                 break;
 
@@ -443,7 +486,14 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
                 break;
             }
 
-            WriteRGB( write_pixel, r, g, b );
+            if (is_v4)
+            {
+                WriteRGBA( write_pixel, r, g, b, a );
+            }
+            else
+            {
+                WriteRGB( write_pixel, r, g, b );
+            }
 
             write_pixel += sizeof( uint32_t );
             read_pixel += bytes_pp;
