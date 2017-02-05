@@ -16,6 +16,7 @@ int CreateImage( Bitmap* img, uint32_t w, uint32_t h )
 }
 
 int ResizeImageMemory( Bitmap* img, uint32_t w, uint32_t h )
+
 {
     if ( img->pixels )
     {
@@ -671,6 +672,14 @@ void DrawRectangle( Bitmap* img, const Rect* rect, RGB color )
     DrawVerticalLine( img, local.y, local.y + local.h - 1, local.x, color );
     DrawVerticalLine( img, local.y, local.y + local.h - 1, local.x + local.w - 1, color);
 }
+
+/*void DrawPlainRectangle( Bitmap* img, const Rect* rect, RGB color )
+{
+    DrawHorizontalLine( img, rect->x, rect->x + rect->w - 1, rect->y, color );
+    DrawHorizontalLine( img, rect->x, rect->x + rect->w - 1, rect->y + rect->h - 1, color );
+    DrawVerticalLine( img, rect->y, rect->y + rect->h - 1, rect->x, color );
+    DrawVerticalLine( img, rect->y, rect->y + rect->h - 1, rect->x + rect->w - 1, color);
+}*/
 
 void DrawGradient( Bitmap* img, const Rect* dst, RGB startcol, RGB xcol, RGB ycol )
 {

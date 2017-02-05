@@ -26,6 +26,8 @@ int InitializeGameState( GameState* state )
     state->gridright = 100;
     state->gridbottom = 100;
 
+    state->game_mode = 0;
+
     state->grid_m = 1.0;
     state->screenw_m = 25;
     state->screenh_m = 20;
@@ -40,6 +42,11 @@ int InitializeGameState( GameState* state )
     colorkey.r = 255;
     colorkey.g = 255;
     colorkey.b = 255;
+
+    if ( !LoadImageFromFile( "BG_Beach.bmp", &state->textures.beach, &colorkey ))
+    {
+        return 0;
+    }
 
     if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state->textures.bread, &colorkey ))
     {
@@ -89,6 +96,12 @@ int InitializeGameState( GameState* state )
     if ( !LoadImageFromFile( "T_WavySand.bmp", &state->textures.tiles[TileWavySand], &colorkey ))
     {
         return 0;
+    }
+
+    if ( !LoadImageFromFile( "Menu_Beach.bmp", &state->textures.menu_beach, NULL ))
+    {
+        MessageBoxA( 0, "Failed to open Menu_Beach.bmp", 0, MB_OK );
+        return 1;
     }
 
     state->camera_follow = NULL;

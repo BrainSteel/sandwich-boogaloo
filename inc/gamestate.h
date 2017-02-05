@@ -4,6 +4,7 @@
 #define GAME_STATE_H
 
 #include "common.h"
+#include "menu.h"
 #include "pixel.h"
 #include "pool.h"
 
@@ -20,9 +21,6 @@
 #define ENTITY_PLAYER           (ENTITY_PLAYERCONTROLLED | ENTITY_COLLIDES | ENTITY_MOVES )
 #define ENTITY_SAND_WITCH       (ENTITY_MOVES | ENTITY_COLLIDES | ENTITY_EVIL)
 
-#define MOUSE_LDOWN (1 << 0)
-#define MOUSE_RDOWN (1 << 1)
-
 typedef enum PlayerKeys
 {
     KeyUp,
@@ -31,13 +29,6 @@ typedef enum PlayerKeys
     KeyRight,
     KeyNum
 } PlayerKeys;
-
-typedef enum GameMode
-{
-    GamePlaying,
-    GameMenu,
-    GamePaused
-} GameMode;
 
 typedef enum ItemType
 {
@@ -55,6 +46,15 @@ typedef enum TileSet
     TileWavySand,
     TileNum
 } TileSet;
+
+typedef enum GameDifficulty
+{
+    EASY,
+    MEDIUM,
+    HARD,
+    EXTREME,
+    TEST
+} GameDifficulty;
 
 typedef struct Input
 {
@@ -84,7 +84,9 @@ typedef struct Entity
 
 typedef struct TextureSet
 {
+    Bitmap numbers;
     Bitmap beach;
+    Bitmap menu_beach;
 
     // Player textures
     Bitmap bread;
@@ -103,6 +105,18 @@ typedef struct TextureSet
 typedef struct GameState
 {
     MemoryPool* pool;
+
+    MainMenu main_menu;
+    int difficulty;
+
+    int game_mode;
+
+    // Used to indicate first time in Start Game (Should be reset after game over)
+    int first_time;
+
+    int paused;
+
+    Rect timer_rect;
 
     int32_t gridleft, gridtop, gridright, gridbottom;
     float grid_m;

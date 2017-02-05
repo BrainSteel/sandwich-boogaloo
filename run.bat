@@ -1,2 +1,4 @@
+
 cd bin && test
+
 cd ..

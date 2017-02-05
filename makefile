@@ -8,13 +8,13 @@ SRC=src
 RSC=rsc
 
 # C source files
-SOURCES = main.c pixel.c screen.c gamestate.c pool.c xorshiftstar.c
+SOURCES = main.c pixel.c screen.c gamestate.c pool.c xorshiftstar.c menu.c
 
 # RC resource scripts
 RESOURCE_SCRIPTS = resource.rc
 
 # Resources to be copied to the BIN directory
-RESOURCES = BG_Beach.bmp Spr_BreadSlice.bmp Spr_Crecent.bmp Spr_Lettuce.bmp Spr_Quadropus.bmp Spr_Tomato.bmp T_BoneSand.bmp T_SesameSand.bmp T_WavySand.bmp Spr_SandWitch.bmp music.wav
+RESOURCES = BG_Beach.bmp Spr_BreadSlice.bmp Spr_Crecent.bmp Spr_Lettuce.bmp Spr_Quadropus.bmp Spr_Tomato.bmp T_BoneSand.bmp T_SesameSand.bmp T_WavySand.bmp Spr_SandWitch.bmp Menu_Beach.bmp music.wav
 
 # Destination paths of objects and resource files
 OBJECTS = $(SOURCES:%.c=$(OBJ)\\%.o)
@@ -22,7 +22,7 @@ RESOURCE_OBJECTS = $(RESOURCE_SCRIPTS:%.rc=$(OBJ)\\%.o)
 COPIED_RESOURCES = $(RESOURCES:%=$(BIN)\\%)
 
 # Allow all warnings
-CFLAGS = -Wall -g -O0
+CFLAGS = -Wall -Ofast
 
 # Targets the Windows subsystem--suppresses the console window on startup
 LFLAGS = -lgdi32 -lwinmm -Wl,-subsystem,windows
