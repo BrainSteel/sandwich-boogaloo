@@ -47,7 +47,8 @@ typedef enum GameDifficulty
     EASY,
     MEDIUM,
     HARD,
-    EXTREME
+    EXTREME,
+    TEST
 } GameDifficulty;
 
 typedef struct Input
@@ -77,6 +78,7 @@ typedef struct TextureSet
 {
     Bitmap numbers;
     Bitmap beach;
+    Bitmap menu_beach;
 
     Bitmap quadropus;
 
@@ -103,6 +105,11 @@ typedef struct GameState
     int difficulty;
 
     int game_mode;
+
+    // Used to indicate first time in Start Game (Should be reset after game over)
+    int first_time;
+
+    int paused;
 
     Rect timer_rect;
 

@@ -13,6 +13,8 @@
 
 Bitmap screen;
 Bitmap main_menu;
+Bitmap pause_menu;
+Bitmap game_over;
 GameState state;
 
 char error_buf[256];
@@ -132,10 +134,17 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
                         state.in[0].keydown[KeyRight] = 1;
                     break;
 
-                    default:
-                    break;
+                    case 0x1B:
+                        state.paused = 1;
+                        break;
                 }
             }
+            /*switch(wparam)
+            {
+                case 0x1B:
+                    state.paused = 1;
+                    break;
+            }*/
         }
         break;
 
@@ -160,6 +169,9 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
     {
         //target = &main_menu;
         ClearBitmap( &main_menu, BLACK );
+
+        //ImageBlit( &state.textures.menu_beach, &main_menu, NULL, 0, 0, AlphaIgnore );
+
         UpdateMainMenu( &state.main_menu, &state.game_mode, state.in[0].mousex, state.in[0].mousey, state.in[0].mousestate );
         DisplayMainMenu( device_context, &state.main_menu, &main_menu, mouse_x, mouse_y );
 
@@ -208,6 +220,31 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
     }
     else if( state.game_mode == GamePlaying )
     {
+        if( state.first_time )
+        {
+            state.logical_frames = 0;
+            state.first_time = 0;
+        }
+
+        if( state.paused )
+        {
+            int choice = MessageBoxA( 0, "Abort to quit.\nRetry to restart.\nIgnore to resume.", "Pause Menu", MB_ABORTRETRYIGNORE | MB_ICONSTOP );
+            if( choice == IDIGNORE )
+            {
+                state.paused = 0;
+            }
+            else if( choice == IDRETRY )
+            {
+                // TODO: goto restart_loc;
+                state.paused = 0;
+            }
+            else if( choice == IDABORT )
+            {
+                state.paused = 0;
+                goto to_quit;
+            }
+        }
+
         //target = &screen;
         ClearBitmap( &screen, BLACK );
         if ( device_context )
@@ -234,13 +271,40 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             FillRectangle( &screen, &HUD_rect, col );
             DrawTimeBar( &state, device_context );
 
-            UpdateWindowImage( device_context, &screen, NULL, NULL );
-
             HFONT HUD_font = CreateFont( 30, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                                                                DEFAULT_QUALITY, FF_ROMAN, NULL );
+                DEFAULT_QUALITY, FF_ROMAN, NULL );
 
             SelectFont( device_context, HUD_font );
             SetBkMode( device_context, TRANSPARENT );
+
+            Rect pause_button_rect;
+            pause_button_rect.x = screen.w - 300;
+            pause_button_rect.y = screen.h - 50;
+            pause_button_rect.w = 200;
+            pause_button_rect.h = 50;
+
+            RGB pause_button_col;
+            pause_button_col.r = 0;
+            pause_button_col.g = 0;
+            pause_button_col.b = 255;
+
+            FillRectangle( &screen, &pause_button_rect, pause_button_col );
+
+            HUD_font = CreateFont( 0, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                DEFAULT_QUALITY, FF_ROMAN, NULL );
+
+            RECT pause_button_text_rect;
+            pause_button_text_rect.left = pause_button_rect.x;
+            pause_button_text_rect.top = pause_button_rect.y;
+            pause_button_text_rect.right = pause_button_rect.x + pause_button_rect.w;
+            pause_button_text_rect.bottom = pause_button_rect.y + pause_button_rect.h;
+
+            DrawTextA( device_context, "Pause", -1, &pause_button_text_rect, DT_RIGHT | DT_TOP | DT_NOCLIP );
+
+            HUD_font = CreateFont( 30, 0, 0, 0, FW_BOLD, 0, 0, 0, BALTIC_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                DEFAULT_QUALITY, FF_ROMAN, NULL );
+
+            UpdateWindowImage( device_context, &screen, NULL, NULL );
 
             char fpsbuf[32];
             sprintf( fpsbuf, "FPS: %u", state.fps );
@@ -291,8 +355,30 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
             SetTextColor( device_context, RGB(255, 0, 0 ) );
         }
     }
+    else if( state.game_mode == GameOver )
+    {
+        char box_message[64] = "GAME OVER\nPress Okay to continue";
+        char box_name[32] = "Game Over";
+        if ( MessageBoxA( 0, box_message, box_name, MB_OK ) == IDOK )
+        {
+            //char restart_message[32] = "Play Again?";
+            //char restart_box_name[32] = "Play Again?";
+            int choice = MessageBoxA( 0, "Play Again?", "Play Again?", MB_YESNO );
+            if ( choice == IDNO )
+            {
+                goto to_quit;
+            }
+            else if( choice == IDYES )
+            {
+                // TODO: goto restart_loc;
+            }
+        }
+
+        state.first_time = 1;
+    }
     else if( state.game_mode == GameQuit )
     {
+        to_quit:
         return 0;
     }
 
@@ -303,7 +389,6 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y )
 
 int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmdshow )
 {
-
 //    PlaySoundA("Ring05.wav", NULL, SND_LOOP | SND_ASYNC);
 
     // Get the frequency of the high performance timer
@@ -326,6 +411,11 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
     // Initialization of global game variabels
     state.score = 0;
+    state.first_time = 1;
+    state.paused = 0;
+
+    // NOTE: DIFFICULTY
+    state.difficulty = TEST;
 
     CreateMainMenu( &state.main_menu, &main_menu );
 
@@ -344,17 +434,15 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 
     window_class.hCursor = LoadCursor( instance, IDC_ARROW );
 
-    // NOTE: DIFFICULTY
-    state.difficulty = EXTREME;
-
     // We need to register the window class in order to use it.
     if ( RegisterClass( &window_class ))
     {
         CreateImage( &screen, SCREEN_WIDTH, SCREEN_HEIGHT );
         CreateImage( &main_menu, SCREEN_WIDTH, SCREEN_HEIGHT );
+        CreateImage( &pause_menu, screen.w / 4, screen.h / 4 );
 
         // Having registered the class, we can now create a window with it.
-        HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+        HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_EX_LAYERED,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
                                                                 SCREEN_WIDTH + SCREEN_WIDTH_OFFSET, SCREEN_HEIGHT + SCREEN_HEIGHT_OFFSET, NULL, NULL, instance, NULL );
 
@@ -366,6 +454,12 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                 MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
                 return 1;
             }
+
+            /*if ( !LoadImageFromFile( "Menu_Beach.bmp", &state.textures.menu_beach, NULL ))
+            {
+                MessageBoxA( 0, "Failed to open Menu_Beach.bmp", 0, MB_OK );
+                return 1;
+            }*/
 
             /*if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread, NULL ))
             {
@@ -485,12 +579,14 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
 quit:
 
     DestroyMemoryPool( state.pool );
+    DestroyImage( &main_menu );
+    DestroyImage( &pause_menu );
     DestroyImage( &screen );
 
     return 0;
 }
 
-void DisplayHUDSprites( GameState* state )
+void DrawOverlay( GameState* state, HDC device_context )
 {
 
 }
@@ -506,21 +602,25 @@ int DrawTimeBar( GameState* state, HDC device_context )
     state->timer_rect.y = 400;
 
     if( state->difficulty == EASY )
-    { state->timer_rect.w = 340 - ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 5 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == MEDIUM )
-    { state->timer_rect.w = 340 - 4 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == HARD )
-    { state->timer_rect.w = 340 - 6 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 12 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     if( state->difficulty == EXTREME )
-    { state->timer_rect.w = 340 - 10 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+    { state->timer_rect.w = 340 - 15 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
+
+    if( state->difficulty == TEST )
+    { state->timer_rect.w = 340 - 100 * ( ( state->logical_frames + FRAMERATE) / FRAMERATE ); }
 
     state->timer_rect.h = 30;
 
     if( state->timer_rect.w <= 0 )
     {
+        state->game_mode = GameOver;
         return 0;
     }
 
