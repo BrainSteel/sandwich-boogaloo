@@ -192,7 +192,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         // Having registered the class, we can now create a window with it.
         HWND win_handle = CreateWindowEx( 0, "SandwichWindowClass", "Sandwich", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
                                                                 CW_USEDEFAULT, CW_USEDEFAULT,
-                                                                SCREEN_WIDTH, SCREEN_HEIGHT, NULL, NULL, instance, NULL );
+                                                                SCREEN_WIDTH + SCREEN_WIDTH_OFFSET, SCREEN_HEIGHT + SCREEN_HEIGHT_OFFSET, NULL, NULL, instance, NULL );
 
         // win_handle will be 0 if we failed to create the window.
         if ( win_handle )
@@ -212,7 +212,6 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
             }
 
             InitializeGameState( &state );
-
 
             MSG message;
             int running = 1;

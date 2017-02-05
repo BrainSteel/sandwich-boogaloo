@@ -12,65 +12,10 @@ int CreateImage( Bitmap* img, uint32_t w, uint32_t h )
     img->info.bmiHeader.biBitCount = BITS_PER_PIXEL;
     img->info.bmiHeader.biCompression = BI_RGB;
 
-    return ResizeImage( img, w, h );
+    return ResizeImageMemory( img, w, h );
 }
 
-void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
-{
-    if ( !img )
-    {
-        return;
-    }
-
-    Rect dst_local;
-    if ( dst )
-    {
-        dst_local.x = dst->x;
-        dst_local.y = dst->y;
-        dst_local.w = dst->w;
-        dst_local.h = dst->h;
-    }
-    else
-    {
-        dst_local.x = 0;
-        dst_local.y = 0;
-        dst_local.w = img->w;
-        dst_local.h = img->h;
-    }
-
-    if ( dst_local.x < 0 )
-    {
-        dst_local.w += dst_local.x;
-        dst_local.x = 0;
-    }
-
-    if ( dst_local.y < 0 )
-    {
-        dst_local.h += dst_local.y;
-        dst_local.y = 0;
-    }
-
-    if ( dst_local.w < 0 || dst_local.h < 0 )
-    {
-        return;
-    }
-
-    int x, y;
-    uint32_t* pixel_row = (uint32_t*)img->pixels + dst_local.x + dst_local.y * img->w;
-    for ( y = 0; y < dst_local.h && y + dst_local.y < img->h; y++ )
-    {
-        uint32_t* pixel = pixel_row;
-        for ( x = 0; x < dst_local.w && x + dst_local.x < img->w; x++ )
-        {
-            WriteRGB( pixel, col.r, col.g, col.b );
-            pixel++;
-        }
-
-        pixel_row += img->w;
-    }
-}
-
-int ResizeImage( Bitmap* img, uint32_t w, uint32_t h )
+int ResizeImageMemory( Bitmap* img, uint32_t w, uint32_t h )
 {
     if ( img->pixels )
     {
@@ -350,6 +295,7 @@ int LoadImageFromFile( const char* filename, Bitmap* img )
     // we read the bitmasks for r, g, and b as well.
     if ( bmphead.compression == 3 )
     {
+
         const uint32_t mask_size = 3 * sizeof(DWORD);
         char mask_bytes[mask_size];
         if ( !ReadFile( file, &mask_bytes, mask_size, &bytes_read, &ol ) ||
@@ -537,6 +483,56 @@ void DestroyImage( Bitmap* img )
     img->h = 0;
 }
 
+Rect ResolveImageRectangle( const Bitmap* img, const Rect* imgrect )
+{
+    Rect local;
+    if ( imgrect )
+    {
+        local = *imgrect;
+
+        if ( local.x < 0 )
+        {
+            local.w += local.x;
+            local.x = 0;
+        }
+
+        if ( local.y < 0 )
+        {
+            local.h += local.y;
+            local.y = 0;
+        }
+
+        if ( local.x + local.w > img->w )
+        {
+            local.w = img->w - local.x;
+        }
+
+        if ( local.y + local.h > img->h )
+        {
+            local.h = img->h - local.y;
+        }
+
+        if ( local.w < 0 )
+        {
+            local.w = 0;
+        }
+
+        if ( local.h < 0 )
+        {
+            local.h = 0;
+        }
+    }
+    else
+    {
+        local.x = 0;
+        local.y = 0;
+        local.w = img->w;
+        local.h = img->h;
+    }
+
+    return local;
+}
+
 void ClearBitmap( Bitmap* img, ClearColor col )
 {
     uint32_t size = img->info.bmiHeader.biSizeImage;
@@ -550,58 +546,40 @@ void ClearBitmap( Bitmap* img, ClearColor col )
     }
 }
 
-void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty )
+void FillRectangle( Bitmap* img, const Rect* dst, RGB col )
 {
-    Rect src_local;
-    if ( srcrect )
-    {
-        src_local = *srcrect;
-    }
-    else
-    {
-        src_local.x = 0;
-        src_local.y = 0;
-        src_local.w = src->w;
-        src_local.h = src->h;
-    }
-
-    int32_t dstrem = dst->w - dstx;
-    if ( dstrem < 0 )
+    if ( !img )
     {
         return;
     }
 
-    uint32_t scanlen = dstrem > src->w ? src->w : dstrem;
+    Rect dst_local = ResolveImageRectangle( img, dst );
 
-    if ( src_local.y < 0 )
+    int x, y;
+    uint32_t* pixel_row = (uint32_t*)img->pixels + dst_local.x + dst_local.y * img->w;
+    for ( y = 0; y < dst_local.h && y + dst_local.y < img->h; y++ )
     {
-        src_local.w += src_local.y;
-        src_local.y = 0;
+        uint32_t* pixel = pixel_row;
+        for ( x = 0; x < dst_local.w && x + dst_local.x < img->w; x++ )
+        {
+            WriteRGB( pixel, col.r, col.g, col.b );
+            pixel++;
+        }
+
+        pixel_row += img->w;
     }
-
-
-    uint32_t* dst_start = (uint32_t*)dst->pixels + dstx + dsty * dst->w;
-    const uint32_t* src_start = (uint32_t*)src->pixels + src_local.x + src_local.y * src->w;
-
-    int y;
-    for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
-    {
-        memcpy( dst_start, src_start, scanlen * sizeof( uint32_t ));
-        dst_start += dst->w;
-        src_start += src->w;
-    }
-}
-
-void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect )
-{
-
 }
 
 void DrawHorizontalLine( Bitmap* img, int xstart, int xend, int y, RGB color )
 {
+    if ( y >= img->h )
+    {
+        return;
+    }
+
     int x;
     uint32_t* row_loc = (uint32_t*)img->pixels + y * img->w;
-    for ( x = xstart; x <= xend; x++ )
+    for ( x = xstart > 0 ? xstart : 0; x <= xend && x < img->w; x++ )
     {
         WriteRGB( row_loc + x, color.r, color.g, color.b );
     }
@@ -609,9 +587,14 @@ void DrawHorizontalLine( Bitmap* img, int xstart, int xend, int y, RGB color )
 
 void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color )
 {
+    if ( x >= img->w )
+    {
+        return;
+    }
+
     int y;
     uint32_t* col_loc = (uint32_t*)img->pixels + x;
-    for ( y = ystart; y <= yend; y++ )
+    for ( y = ystart > 0 ? ystart : 0; y <= yend && y < img->h; y++ )
     {
         WriteRGB( col_loc + img->w * y, color.r, color.g, color.b );
     }
@@ -619,26 +602,17 @@ void DrawVerticalLine( Bitmap* img, int ystart, int yend, int x, RGB color )
 
 void DrawRectangle( Bitmap* img, const Rect* rect, RGB color )
 {
-    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y, color );
-    DrawHorizontalLine( img, rect->x, rect->x + rect->w, rect->y + rect->h, color );
-    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x, color );
-    DrawVerticalLine( img, rect->y, rect->y + rect->h, rect->x + rect->w, color);
+    Rect local = ResolveImageRectangle( img, rect );
+
+    DrawHorizontalLine( img, local.x, local.x + local.w - 1, local.y, color );
+    DrawHorizontalLine( img, local.x, local.x + local.w - 1, local.y + local.h - 1, color );
+    DrawVerticalLine( img, local.y, local.y + local.h - 1, local.x, color );
+    DrawVerticalLine( img, local.y, local.y + local.h - 1, local.x + local.w - 1, color);
 }
 
 void DrawGradient( Bitmap* img, const Rect* dst, RGB startcol, RGB xcol, RGB ycol )
 {
-    Rect to;
-    if ( dst )
-    {
-        to = *dst;
-    }
-    else
-    {
-        to.x = 0;
-        to.y = 0;
-        to.w = img->w;
-        to.h = img->h;
-    }
+    Rect to = ResolveImageRectangle( img, dst );
 
     #define SHIFT_BITS 16
     uint32_t sr, sg, sb;
@@ -703,5 +677,55 @@ void FillGradientPattern( Bitmap* img, int x_off, int y_off )
             WriteRGB( whole_pixel, 0, y + y_off, x + x_off );
             whole_pixel++;
         }
+    }
+}
+
+void ImageBlit( const Bitmap* src, Bitmap* dst, const Rect* srcrect, uint32_t dstx, uint32_t dsty )
+{
+    Rect src_local = ResolveImageRectangle( src, srcrect );
+
+    int32_t dstrem = dst->w - dstx;
+    if ( dstrem < 0 )
+    {
+        return;
+    }
+
+    uint32_t scanlen = dstrem > src->w ? src->w : dstrem;
+
+    uint32_t* dst_start = (uint32_t*)dst->pixels + dstx + dsty * dst->w;
+    const uint32_t* src_start = (uint32_t*)src->pixels + src_local.x + src_local.y * src->w;
+
+    int y;
+    for ( y = 0; y < src_local.h && y < dst->h - dsty; y++ )
+    {
+        memcpy( dst_start, src_start, scanlen * sizeof( uint32_t ));
+        dst_start += dst->w;
+        src_start += src->w;
+    }
+}
+
+void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect* dstrect )
+{
+    Rect src_local = ResolveImageRectangle( src, srcrect );
+    Rect dst_local = ResolveImageRectangle( dst, dstrect );
+
+    uint32_t w_ratio = (src_local.w << 16) / dst_local.w + 1;
+    uint32_t h_ratio = (src_local.h << 16) / dst_local.h + 1;
+
+    uint32_t x, y;
+    uint32_t dstx, dsty;
+    uint32_t* dst_row = (uint32_t*)dst->pixels + dst_local.y * dst->w + dst_local.x;
+    for ( dsty = 0; dsty < dst_local.h; dsty++ )
+    {
+        uint32_t* dst_pixel = dst_row;
+        for ( dstx = 0; dstx < dst_local.w; dstx++ )
+        {
+            x = ((dstx * w_ratio) >> 16);
+            y = ((dsty * h_ratio) >> 16);
+            *dst_pixel = *((uint32_t*)src->pixels + y * src->w + x);
+            dst_pixel++;
+        }
+
+        dst_row += dst->w;
     }
 }
