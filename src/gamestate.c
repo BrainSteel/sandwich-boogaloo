@@ -95,7 +95,8 @@ int InitializeGameState( GameState* state )
 
     state->entities = state->pool->sections[state->entity_section].begin;
     state->camera_follow = AddBlank( state, 0, 0 );
-    AddPlayer( state, -7, 0, 0 );
+
+    GenerateLevel( state );
 
     return 1;
 }
@@ -112,24 +113,32 @@ void GenerateLevel( GameState* state )
 
     AddWall( state, -8, 0 );
 
+    int midbot = 0;
+
     int x, y;
+
+    for ( y = -6; y < 6; y++ )
+    {
+        AddWall( state, -8, y );
+    }
+
     for( x = -7; x <= 7; x++ )
     {
-        top = xorshift64star_range( 0, 5 );
-        bot = -xorshift64star_range( 0, 5 );
+        top = xorshift64star_range( 1, 5 );
+        bot = -xorshift64star_range( 1, 5 );
 
-        for ( y = bot; y < prevbot - 1; y++ )
+        for ( y = -6; y < bot; y++ )
         {
-            AddWall( state, x - 1, y );
+            AddWall( state, x, y );
         }
 
-        for ( y = prevtop + 1; y < top; y++ )
+        for ( y = top; y < 6; y++ )
         {
-            AddWall( state, x - 1, y );
+            AddWall( state, x, y );
         }
 
-        AddWall( state, x, bot );
-        AddWall( state, x, top );
+        //AddWall( state, x, bot );
+        //AddWall( state, x, top );
 
         for ( y = bot; y < top; y++ )
         {
@@ -142,19 +151,23 @@ void GenerateLevel( GameState* state )
 
         if ( x == 0 )
         {
-            AddWitch( state, x, bot );
+            midbot = bot;
         }
 
         prevbot = bot;
         prevtop = top;
     }
 
-    AddCrecent( state, 7, prevtop );
+    AddCrecent( state, 7, prevtop - 1 );
 
-    for ( y = prevbot + 1; y < prevtop; y++ )
+    for ( y = -6; y < 6; y++ )
     {
-        AddWall( state, x, y );
+        AddWall( state, 8, y );
     }
+
+    AddPlayer( state, -7, 0, 0 );
+
+    AddWitch( state, 0, midbot );
 }
 
 static Entity* GetFreeEntity( GameState* state )
@@ -211,7 +224,7 @@ Entity* AddPlayer( GameState* state, int grid_x, int grid_y, int input_index )
 
     player_entity->texture = &state->textures.player_texture;
     player_entity->texture_rect.x = 0;
-    player_entity->texture_rect.y = player_entity->texture->h - player_entity->texture->w;
+    player_entity->texture_rect.y = 0;
     player_entity->texture_rect.w = player_entity->texture->w;
     player_entity->texture_rect.h = player_entity->texture->w;
 
@@ -228,7 +241,6 @@ Entity* AddWall( GameState* state, int grid_x, int grid_y )
     wall->grid_y = grid_y;
 
     wall->flags |= ENTITY_COLLIDES | ENTITY_INVISIBLE;
-    wall->texture = NULL;
 
     return wall;
 }
@@ -371,7 +383,7 @@ void UpdateGameState( GameState* state, float elapsed )
 
         if ( entity->flags & ENTITY_MOVES )
         {
-            int blocks[4] = {0};
+            int blocks[4] = {0, 0, 0, 0};
             if ( entity->flags & ENTITY_COLLIDES )
             {
                 for ( j = 0; j < state->numentities; j++ )
@@ -379,27 +391,44 @@ void UpdateGameState( GameState* state, float elapsed )
                     Entity* secondary = &state->entities[j];
                     if ( secondary->flags & ENTITY_ACTIVE )
                     {
-                        if ( secondary->flags & ENTITY_COLLIDES )
+                        if ( secondary->flags & ENTITY_COLLIDES && !(secondary->flags & ENTITY_PLAYERCONTROLLED))
                         {
                             if ( secondary->grid_x == entity->grid_x &&
                                  secondary->grid_y == entity->grid_y - 1 )
                             {
                                 blocks[KeyUp] = 1;
+
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyUp] = 0;
+                                }
                             }
                             else if ( secondary->grid_x == entity->grid_x &&
                                       secondary->grid_y == entity->grid_y + 1 )
                             {
                                 blocks[KeyDown] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyDown] = 0;
+                                }
                             }
                             else if ( secondary->grid_x == entity->grid_x - 1 &&
                                       secondary->grid_y == entity->grid_y )
                             {
                                 blocks[KeyLeft] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyLeft] = 0;
+                                }
                             }
                             else if ( secondary->grid_x == entity->grid_x + 1 &&
                                       secondary->grid_y == entity->grid_y )
                             {
                                 blocks[KeyRight] = 1;
+                                if ( entity->flags & ENTITY_PLAYERCONTROLLED )
+                                {
+                                    state->in[0].keydown[KeyRight] = 0;
+                                }
                             }
                         }
 
@@ -410,6 +439,13 @@ void UpdateGameState( GameState* state, float elapsed )
                              secondary->grid_y == entity->grid_y )
                         {
                             state->player_score += secondary->score;
+
+                            Rect blitrect;
+                            blitrect.x = 0;
+                            blitrect.y = entity->texture_rect.y - SANDWICH_STACK_OFFSET;
+                            blitrect.w = entity->texture_rect.w;
+                            blitrect.h = entity->texture_rect.w;
+
                             entity->texture_rect.y -= SANDWICH_STACK_OFFSET;
                             entity->texture_rect.h += SANDWICH_STACK_OFFSET;
 
@@ -421,12 +457,6 @@ void UpdateGameState( GameState* state, float elapsed )
                             }
                             else
                             {
-                                Rect blitrect;
-                                blitrect.x = 0;
-                                blitrect.y = entity->texture_rect.y;
-                                blitrect.w = entity->texture_rect.w;
-                                blitrect.h = entity->texture_rect.h;
-
                                 ImageBlitScaled( secondary->texture, entity->texture, NULL, &blitrect, AlphaBinary );
                             }
                             DestroyEntity( state, secondary );
@@ -486,6 +516,11 @@ void UpdateGameState( GameState* state, float elapsed )
                     }
 
                     if ( !player )
+                    {
+                        continue;
+                    }
+
+                    if ( !player->dx && !player->dy)
                     {
                         continue;
                     }
@@ -670,7 +705,7 @@ void RenderGameState( Bitmap* screen, const Rect* dstrect, GameState* state, flo
 
             if ( entity->flags & ENTITY_PLAYERCONTROLLED )
             {
-                uint32_t newh = entity->texture_rect.h * entity->texture_rect.w / dstentity.w;
+                uint32_t newh = entity->texture_rect.h * dstentity.w / entity->texture_rect.w;
                 dstentity.y -= newh - dstentity.h;
                 dstentity.h = newh;
             }

@@ -811,7 +811,7 @@ void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect*
         {
             x = ((dstx * w_ratio) >> 16);
             y = ((dsty * h_ratio) >> 16);
-            uint32_t pixval = *((uint32_t*)src->pixels + y * src->w + x);
+            uint32_t pixval = *((uint32_t*)src->pixels + (src_local.y + y) * src->w + (src_local.x + x));
             if ( alpha == AlphaIgnore )
             {
                 *dst_pixel = pixval;
@@ -820,7 +820,7 @@ void ImageBlitScaled( Bitmap* src, Bitmap* dst, const Rect* srcrect, const Rect*
             {
                 if ( !(pixval & TRANSPARENT_MASK) )
                 {
-                    *dst_pixel = pixval;
+                    *dst_pixel = pixval & ~TRANSPARENT_MASK;
                 }
             }
             dst_pixel++;

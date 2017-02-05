@@ -131,6 +131,7 @@ typedef struct GameState
 } GameState;
 
 int InitializeGameState( GameState* state );
+void GenerateLevel( GameState* state );
 Entity* AddBlank( GameState* state, int grid_x, int grid_y );
 Entity* AddPlayer( GameState* state, int grid_x, int grid_y, int input_index );
 Entity* AddWall( GameState* state, int grid_x, int grid_y );
