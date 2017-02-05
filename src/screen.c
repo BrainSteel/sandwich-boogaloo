@@ -58,7 +58,7 @@ int ResizeWindowImage( HWND win_handle, Bitmap* screen_img )
     Rect draw;
     if ( GetDrawableRect( win_handle, &draw ))
     {
-        return ResizeImage( screen_img, draw.w, draw.h );
+        return ResizeImageMemory( screen_img, draw.w, draw.h );
     }
     else
     {
