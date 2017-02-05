@@ -76,7 +76,7 @@ LRESULT CALLBACK WindowProcedure( HWND win_handle, UINT message, WPARAM wparam, 
                 game_rect.y = 0;
                 game_rect.w = screen.w - 380;
                 game_rect.h = screen.h;
-                ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
+                ImageBlit( &state.textures.beach, &screen, NULL, 0, 0, AlphaIgnore );
                 RenderGameState( &screen, &game_rect, &state, 0 );
 
                 UpdateWindowImage( device_context, &screen, NULL, NULL );
@@ -198,15 +198,9 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
         if ( win_handle )
         {
 
-            if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach ))
+            if ( !LoadImageFromFile( "BG_Beach.bmp", &state.textures.beach, NULL ))
             {
                 MessageBoxA( 0, "Failed to open BG_Beach.bmp", 0, MB_OK );
-                return 1;
-            }
-
-            if ( !LoadImageFromFile( "Spr_BreadSlice.bmp", &state.textures.bread ))
-            {
-                MessageBoxA( 0, "Failed to open Spr_BreadSlice.bmp", 0, MB_OK );
                 return 1;
             }
 
@@ -265,7 +259,7 @@ int CALLBACK WinMain( HINSTANCE instance, HINSTANCE prev, LPSTR cmdline, int cmd
                         game_rect.y = 0;
                         game_rect.w = screen.w - 380;
                         game_rect.h = screen.h;
-                        ImageBlit( &state.textures.beach, &screen, NULL, 0, 0 );
+                        ImageBlit( &state.textures.beach, &screen, NULL, 0, 0, AlphaIgnore );
                         RenderGameState( &screen, &game_rect, &state, frames_passed );
 
                         UpdateWindowImage( device_context, &screen, NULL, NULL );
