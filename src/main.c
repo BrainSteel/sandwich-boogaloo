@@ -398,11 +398,13 @@ int Paint( Bitmap* target, HWND win_handle, int mouse_x, int mouse_y, float elap
                     state.logical_frames = 0;
                     state.camera_follow = AddBlank( &state, 0, 0 );
 
+
                     GenerateLevel( &state );
                     AddPlayer( &state, -7, 0, 0 );
                     AddWitch( &state, 0, 0 );
-
-                    return 0;
+                    state.game_mode = GamePlaying;
+                    state.first_time = 1;
+                    state.paused = 0;
                 }
             }
 
